@@ -3,11 +3,11 @@ import { UserService } from './services/UserService'
 import './app.css'
 
 interface User {
-    name?: { display_value?: string; value?: string }
-    first_name?: { display_value?: string; value?: string }
-    last_name?: { display_value?: string; value?: string }
-    user_name?: { display_value?: string; value?: string }
-    email?: { display_value?: string; value?: string }
+    user_name?: string
+    user_display_name?: string
+    user_initials?: string
+    user_avatar?: string
+    user_sys_id?: string
 }
 
 export default function App() {
@@ -43,14 +43,9 @@ export default function App() {
     const getUserDisplayName = () => {
         if (!user) return 'User'
         
-        // Try to get a meaningful display name
-        if (user.name?.display_value) return user.name.display_value
-        if (user.name?.value) return user.name.value
-        if (user.first_name?.display_value && user.last_name?.display_value) {
-            return `${user.first_name.display_value} ${user.last_name.display_value}`
-        }
-        if (user.user_name?.display_value) return user.user_name.display_value
-        if (user.user_name?.value) return user.user_name.value
+        // Use the correct field names from the API response
+        if (user.user_display_name) return user.user_display_name
+        if (user.user_name) return user.user_name
         
         return 'User'
     }

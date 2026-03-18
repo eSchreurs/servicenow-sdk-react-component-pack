@@ -9,19 +9,15 @@ export class UserService {
     // Get current user information
     async getCurrentUser() {
         try {
-            // Check if g_ck is available
+            // Check if g_ck is available for API calls
             if (!window.g_ck) {
                 console.warn('g_ck token not available, using fallback')
-                return { user_name: { display_value: 'ServiceNow User' } }
+                return { user_name: 'ServiceNow User' }
             }
-
-            const searchParams = new URLSearchParams()
-            searchParams.set('sysparm_display_value', 'all')
-            searchParams.set('sysparm_fields', 'sys_id,name,first_name,last_name,user_name,email')
 
             console.log('Making API request to get current user...')
             
-            const response = await fetch(`/api/now/table/sys_user/me?${searchParams.toString()}`, {
+            const response = await fetch('/api/now/ui/user/current_user', {
                 method: 'GET',
                 headers: {
                     Accept: 'application/json',
@@ -37,13 +33,15 @@ export class UserService {
                 throw new Error(errorData.error?.message || `HTTP error ${response.status}`)
             }
 
-            const { result } = await response.json()
-            console.log('API result:', result)
-            return result
+            const responseData = await response.json()
+            console.log('API result:', responseData)
+            
+            // Return the actual user data from result.result
+            return responseData.result
         } catch (error) {
             console.error('Error fetching current user:', error)
             // Return a fallback user object so the app still works
-            return { user_name: { display_value: 'ServiceNow User' } }
+            return { user_name: 'ServiceNow User' }
         }
     }
 }

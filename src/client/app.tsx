@@ -81,12 +81,6 @@ export default function App() {
             <div className="welcome-container">
                 <h1>Hello, {getUserDisplayName()}!</h1>
                 <p>Welcome to the ServiceNow SDK Component Pack</p>
-                {process.env.NODE_ENV === 'development' && (
-                    <details style={{ marginTop: '20px', textAlign: 'left' }}>
-                        <summary>Debug Info</summary>
-                        <pre>{JSON.stringify(user, null, 2)}</pre>
-                    </details>
-                )}
             </div>
         </div>
     )

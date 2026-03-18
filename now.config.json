@@ -1,0 +1,6 @@
+{
+  "scope": "x_326171_ssdk_pack",
+  "scopeId": "579452cc833bb2107b1bc730ceaad3b1",
+  "name": "ServiceNow SDK Component Pack",
+  "tsconfigPath": "./src/server/tsconfig.json"
+}

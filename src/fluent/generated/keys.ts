@@ -9,7 +9,7 @@ declare global {
                         table: 'sys_module'
                         id: '2406007b4e7b45b4947e4b885e67e34b'
                     }
-                    'hello-user-page': {
+                    'component-pack-page': {
                         table: 'sys_ui_page'
                         id: 'a8b5c8ceb5d0417eb17ef7fdcfc6057f'
                     }

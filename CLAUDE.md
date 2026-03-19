@@ -1,6 +1,6 @@
 # CLAUDE.md — ServiceNow SDK React Component Pack
 
-You are building the **servicenow-sdk-react-component-pack** for EsTech Development. This file contains non-negotiable rules that apply to every session. Read it completely before writing any code.
+You are building the **servicenow-sdk-react-component-pack**. This file contains non-negotiable rules that apply to every session. Read it completely before writing any code.
 
 For task-specific instructions, read the phase document provided in the session prompt.
 
@@ -71,5 +71,3 @@ A ServiceNow scoped app (`/servicenow-app`) paired with a React component librar
 - Does this already exist somewhere in the codebase? → **Use it**
 
 ---
-
-*EsTech Development — March 2026*

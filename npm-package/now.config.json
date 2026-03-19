@@ -1,0 +1,6 @@
+{
+  "scope": "x_est_react_lib",
+  "scopeId": "",
+  "name": "ServiceNow React Component Library",
+  "tsconfigPath": "./src/server/tsconfig.json"
+}

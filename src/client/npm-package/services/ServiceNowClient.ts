@@ -1,0 +1,2 @@
+// ServiceNowClient.ts — placeholder
+export {}

@@ -1,0 +1,2 @@
+// ThemeContext.tsx — placeholder
+export {}

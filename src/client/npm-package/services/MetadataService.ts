@@ -1,0 +1,2 @@
+// MetadataService.ts — placeholder
+export {}

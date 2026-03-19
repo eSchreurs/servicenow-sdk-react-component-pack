@@ -1,0 +1,2 @@
+// ServiceNowContext.tsx — placeholder
+export {}

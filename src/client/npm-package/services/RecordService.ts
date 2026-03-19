@@ -1,0 +1,2 @@
+// RecordService.ts — placeholder
+export {}

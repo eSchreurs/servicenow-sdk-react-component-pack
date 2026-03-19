@@ -1,26 +1,15 @@
 {
-  "name": "x-326171-service-now-sdk-component-pack",
+  "name": "servicenow-sdk-react-component-pack-monorepo",
   "version": "1.0.0",
-  "description": "Components for the ServiceNow SDK that work with native platform functionality",
+  "description": "Monorepo — ServiceNow React Component Pack (scoped app + NPM component library)",
   "license": "UNLICENSED",
+  "private": true,
+  "workspaces": [
+    "servicenow-app",
+    "npm-package"
+  ],
   "scripts": {
-    "build": "now-sdk build",
-    "deploy": "now-sdk install",
-    "transform": "now-sdk transform",
-    "types": "now-sdk dependencies"
-  },
-  "devDependencies": {
-    "@servicenow/sdk": "4.4.0",
-    "@servicenow/glide": "26.0.1",
-    "eslint": "8.50.0",
-    "@servicenow/eslint-plugin-sdk-app-plugin": "4.4.0",
-    "@servicenow/isomorphic-rollup": "^1.2.3",
-    "@types/react": "19.x",
-    "@types/react-dom": "19.x",
-    "typescript": "5.5.4"
-  },
-  "dependencies": {
-    "react": "19.x",
-    "react-dom": "19.x"
+    "build": "npm run build --workspaces",
+    "deploy": "npm run deploy --workspace=servicenow-app"
   }
 }

@@ -1,6 +1,6 @@
 # CLAUDE.md — ServiceNow SDK React Component Pack
 
-You are building the **servicenow-sdk-react-component-pack**. This file contains non-negotiable rules that apply to every session. Read it completely before writing any code.
+You are building the **servicenow-sdk-react-component-pack** for EsTech Development. This file contains non-negotiable rules that apply to every session. Read it completely before writing any code.
 
 For task-specific instructions, read the phase document provided in the session prompt.
 
@@ -8,7 +8,35 @@ For task-specific instructions, read the phase document provided in the session 
 
 ## Project in One Sentence
 
-A ServiceNow scoped app (`/servicenow-app`) paired with a React component library (`/npm-package`), built as a monorepo, that allows developers to build pro-code ServiceNow SDK applications using pre-built, themeable React components.
+A ServiceNow scoped app that contains both the server-side infrastructure and a React component library, allowing developers to build pro-code ServiceNow SDK applications using pre-built, themeable React components.
+
+---
+
+## Repository Structure
+
+The repository root IS the ServiceNow app. The ServiceNow IDE clones and builds from the root. There is no monorepo split.
+
+```
+/ (root = ServiceNow app)
+├── now.config.json
+├── src/
+│   ├── client/
+│   │   ├── component-explorer/    ← UI Page documentation app
+│   │   └── npm-package/           ← React component library
+│   │       ├── components/
+│   │       │   ├── atoms/
+│   │       │   ├── molecules/
+│   │       │   └── organisms/
+│   │       ├── services/
+│   │       ├── context/
+│   │       ├── theme/
+│   │       ├── types/
+│   │       └── index.ts
+│   ├── server/
+│   │   └── api/                   ← Scripted REST APIs
+│   └── fluent/
+└── docs/
+```
 
 ---
 
@@ -71,3 +99,5 @@ A ServiceNow scoped app (`/servicenow-app`) paired with a React component librar
 - Does this already exist somewhere in the codebase? → **Use it**
 
 ---
+
+*EsTech Development — March 2026*

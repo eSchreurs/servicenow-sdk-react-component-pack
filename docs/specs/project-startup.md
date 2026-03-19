@@ -10,7 +10,7 @@
 - **Description:** A two-part developer toolkit consisting of (1) a ServiceNow scoped application that provides the server-side infrastructure, and (2) an NPM package of reusable React components for use in any ServiceNow SDK project. Developers install the scoped app once per instance, then import components via NPM in any SDK project.
 - **Purpose:** To accelerate pro-code app development on the ServiceNow platform by providing a consistent, configurable, and themeable set of React components that integrate natively with ServiceNow's data layer.
 - **Primary Language(s):** `TypeScript (TSX), JavaScript (ServiceNow server-side)`
-- **Project Type:** `Monorepo — ServiceNow Scoped App + NPM React Component Library`
+- **Project Type:** `Single ServiceNow SDK Application — contains both the companion app server-side infrastructure and the React component library`
 
 ---
 
@@ -71,13 +71,13 @@ The project must be built in the following sequence. The agent must never skip a
 ### Stack
 | Layer | Technology |
 |-------|------------|
-| Repo Structure | `Monorepo (Turborepo or NPM workspaces)` |
+| Repo Structure | `Single ServiceNow SDK app — no monorepo split` |
 | Components | `React (TSX)` |
 | Language | `TypeScript (NPM package), JavaScript (ServiceNow app)` |
 | Styling | `CSS/SCSS variables via centralized theme file` |
 | Data Layer | `ServiceNow Table API + Scripted REST APIs` |
 | Server-side Eval | `Scripted REST API → ServiceNow Rhino Engine` |
-| Package Distribution | `NPM (React library), Update Set or ServiceNow Store (scoped app)` |
+| Package Distribution | `Deployed as a ServiceNow scoped app via the SDK` |
 | SDK | `@servicenow/sdk 4.4.0` |
 | Glide Types | `@servicenow/glide 26.0.1` |
 | Build Tooling | `now-sdk build (@servicenow/isomorphic-rollup)` |
@@ -170,57 +170,53 @@ The two packages are tightly coupled: changes to a REST endpoint in the ServiceN
 ## 6. File Structure
 
 ```
-servicenow-sdk-react-component-pack/        # Monorepo root
-├── servicenow-app/                         # ServiceNow scoped application (installed on instance)
-│   ├── src/
-│   │   ├── client/                         # Client-side assets
-│   │   │   └── component-explorer/         # React app: living documentation UI Page
-│   │   │       ├── index.html              # Entry point for the UI Page
-│   │   │       ├── ComponentExplorer.tsx   # Root component: sidebar nav + content area
-│   │   │       ├── pages/                  # One page per component (e.g. ButtonPage.tsx)
-│   │   │       └── components/             # Explorer-specific UI (e.g. PropTable, CodeSnippet)
-│   │   ├── server/                         # Server-side scripts (Scripted REST APIs, Script Includes)
-│   │   │   ├── scripted_rest_apis/         # REST endpoints (Rhino evaluator, config, etc.)
-│   │   │   ├── script_includes/            # Reusable server-side script includes
-│   │   │   └── tsconfig.json              # Server-side TypeScript config (as per now.config.json)
-│   │   └── fluent/                         # ServiceNow Fluent API definitions (if applicable)
-│   ├── now.config.json                     # Scoped app config (scope, scopeId, name, tsconfigPath)
-│   ├── now.prebuild.mjs                    # Prebuild hook for client asset bundling
-│   ├── package.json
-│   └── .eslintrc                           # ESLint with @servicenow/sdk-app-plugin
-│
-├── npm-package/                            # React component library (installed per SDK project)
-│   ├── src/
-│   │   ├── client/                         # All client-side source code
-│   │   │   ├── components/                 # React components (atomic design)
-│   │   │   │   ├── atoms/                  # Primitives: Button, Input, Text, Icon, etc.
-│   │   │   │   ├── molecules/              # Composed: FormField, SearchBar, etc.
-│   │   │   │   └── organisms/             # Complex: Form, DataTable, Modal, etc.
-│   │   │   ├── services/                   # Shared services used across components
-│   │   │   │   ├── tableApi.ts             # ServiceNow Table API calls
-│   │   │   │   ├── rhinoApi.ts             # Scripted REST / Rhino engine calls
-│   │   │   │   └── [other services]        # e.g. authService.ts, displayValueHelper.ts
-│   │   │   ├── theme/                      # Centralized theme file (colors, fonts, sizes, etc.)
-│   │   │   ├── types/                      # Shared TypeScript interfaces and types
-│   │   │   └── index.ts                    # Main entry point — all component & service exports
-│   │   └── server/                         # Server-side scripts (if npm-package needs any)
-│   ├── now.config.json
-│   ├── now.prebuild.mjs
-│   ├── package.json
-│   └── .eslintrc
-│
-├── package.json                            # Monorepo root — workspaces config
-├── [turbo.json]                            # Optional: Turborepo config
-└── README.md                               # Setup guide: instance app install + NPM usage
+/ (repository root = ServiceNow app)
+├── now.config.json                     # SDK app config (scope, scopeId, name)
+├── now.prebuild.mjs                    # Prebuild hook for client asset bundling
+├── package.json                        # SDK dependencies
+├── .eslintrc                           # ESLint with @servicenow/sdk-app-plugin
+├── docs/                               # Project documentation
+│   ├── specs/                          # Spec documents
+│   └── phases/                         # Phase documents and review checklists
+└── src/
+    ├── client/                         # All client-side source code
+    │   ├── component-explorer/         # UI Page — living documentation app (Phase 9)
+    │   └── npm-package/                # React component library
+    │       ├── components/
+    │       │   ├── atoms/              # Primitive components
+    │       │   ├── molecules/          # Composed components
+    │       │   └── organisms/          # Complex components (Form, etc.)
+    │       ├── services/               # Shared services
+    │       │   ├── CacheService.ts
+    │       │   ├── ServiceNowClient.ts
+    │       │   ├── MetadataService.ts
+    │       │   ├── RecordService.ts
+    │       │   ├── SearchService.ts
+    │       │   └── RhinoService.ts
+    │       ├── context/                # React context providers
+    │       │   ├── ThemeContext.tsx
+    │       │   └── ServiceNowContext.tsx
+    │       ├── theme/
+    │       │   └── theme.ts            # Global styling variables
+    │       ├── types/
+    │       │   └── index.ts            # All shared types
+    │       └── index.ts                # Main entry point — all exports
+    ├── server/                         # Server-side scripts
+    │   ├── tsconfig.json
+    │   └── api/                        # Scripted REST APIs (Rhino, hierarchy endpoints)
+    └── fluent/                         # ServiceNow Fluent API definitions
 ```
 
 ### Key Files
 | File | Purpose |
 |------|---------|
-| `src/index.ts` | Main entry point; all components and utilities exported from here |
-| `src/theme/theme.ts` | Global styling variables referenced by all components |
-| `src/api/tableApi.ts` | Utility functions for ServiceNow Table API calls |
-| `src/api/rhinoApi.ts` | Utility functions for the Scripted REST / Rhino engine endpoint |
+| `now.config.json` | SDK app config — scope, scopeId, name |
+| `src/client/npm-package/index.ts` | Main entry point for the component library |
+| `src/client/npm-package/theme/theme.ts` | Global styling variables |
+| `src/client/npm-package/services/CacheService.ts` | Centralised in-memory cache |
+| `src/client/npm-package/services/ServiceNowClient.ts` | Base HTTP layer |
+| `src/client/npm-package/services/RhinoService.ts` | Qualifier evaluation endpoint |
+| `src/server/api/` | Scripted REST API endpoints (hierarchy, Rhino) |
 
 ---
 

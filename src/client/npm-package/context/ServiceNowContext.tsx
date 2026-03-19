@@ -15,8 +15,8 @@ interface ServiceNowProviderProps {
   children: ReactNode;
 }
 
-export function ServiceNowProvider({ config, children }: ServiceNowProviderProps): JSX.Element {
-  const mergedConfig: ServiceNowConfig = config ? { ...defaultConfig, ...config } : defaultConfig;
+export function ServiceNowProvider({ config, children }: ServiceNowProviderProps): React.ReactElement {
+  const mergedConfig: ServiceNowConfig = { ...defaultConfig, ...config };
   return (
     <ServiceNowContext.Provider value={mergedConfig}>
       {children}

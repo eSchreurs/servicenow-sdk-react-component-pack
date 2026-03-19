@@ -51,6 +51,7 @@ export interface FieldMetadata {
   referenceQual?: string;
   dynamicRefQual?: string;
   dependentOnField?: string;
+  referenceDisplayField?: string;  // resolved via secondary sys_dictionary query in MetadataService
 }
 
 export interface ChoiceEntry {

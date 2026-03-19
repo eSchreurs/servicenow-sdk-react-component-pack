@@ -8,8 +8,8 @@ interface ThemeProviderProps {
   children: ReactNode;
 }
 
-export function ThemeProvider({ theme, children }: ThemeProviderProps): JSX.Element {
-  const mergedTheme: Theme = theme ? { ...defaultTheme, ...theme } : defaultTheme;
+export function ThemeProvider({ theme, children }: ThemeProviderProps): React.ReactElement {
+  const mergedTheme: Theme = { ...defaultTheme, ...theme };
   return (
     <ThemeContext.Provider value={mergedTheme}>
       {children}

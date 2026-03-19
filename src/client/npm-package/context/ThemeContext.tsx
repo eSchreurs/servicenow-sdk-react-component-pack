@@ -9,7 +9,7 @@ interface ThemeProviderProps {
 }
 
 export function ThemeProvider({ theme, children }: ThemeProviderProps): React.ReactElement {
-  const mergedTheme: Theme = theme ? { ...defaultTheme, ...theme } : defaultTheme;
+  const mergedTheme: Theme = { ...defaultTheme, ...theme };
   return (
     <ThemeContext.Provider value={mergedTheme}>
       {children}

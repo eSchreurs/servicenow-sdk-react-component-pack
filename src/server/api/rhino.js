@@ -12,7 +12,7 @@
         var sysId = body.sysId;
         var field = body.field;
         var searchTerm = body.searchTerm || '';
-        var searchFields = body.searchFields || [];
+        var searchFields = Array.isArray(body.searchFields) ? body.searchFields : [];
         var limit = body.limit || 15;
 
         // 1. Load current record — provides GlideRecord context for qualifier evaluation.
@@ -35,6 +35,11 @@
         }
 
         var referenceTable = dictGR.getValue('reference');
+        if (!referenceTable) {
+            response.setBody({ result: [] });
+            return;
+        }
+
         var qualType = dictGR.getValue('use_reference_qualifier');
 
         // 3. Evaluate qualifier using GlideScopedEvaluator against the actual GlideRecord
@@ -54,9 +59,21 @@
             }
         }
 
-        // 4. Build OR-combined CONTAINS search query.
+        // 4. Resolve the display field of the reference table.
+        //    Query sys_dictionary for display=true on the reference table to get the
+        //    actual field name (e.g. 'name', 'number'). getDisplayValue('reference')
+        //    returns the table label ('User'), not the field name — cannot be used here.
+        var displayField = 'name'; // safe fallback
+        var dispDict = new GlideRecord('sys_dictionary');
+        dispDict.addQuery('name', referenceTable);
+        dispDict.addQuery('display', 'true');
+        dispDict.query();
+        if (dispDict.next()) {
+            displayField = dispDict.getValue('element') || 'name';
+        }
+
+        // 5. Build OR-combined CONTAINS search query.
         //    Display value field of the reference table is always included first.
-        var displayField = dictGR.getDisplayValue('reference');
         var searchParts = [displayField + 'CONTAINS' + searchTerm];
         for (var i = 0; i < searchFields.length; i++) {
             if (searchFields[i] !== displayField) {
@@ -65,12 +82,12 @@
         }
         var searchQuery = searchParts.join('^OR');
 
-        // 5. AND the resolved qualifier onto the search conditions.
+        // 6. AND the resolved qualifier onto the search conditions.
         if (qualifier) {
             searchQuery = '(' + searchQuery + ')^' + qualifier;
         }
 
-        // 6. Query the reference table and build results.
+        // 7. Query the reference table and build results.
         var gr = new GlideRecord(referenceTable);
         gr.addEncodedQuery(searchQuery);
         gr.setLimit(limit);

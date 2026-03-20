@@ -1,3 +1,5 @@
+import { GlideRecord, GlideScopedEvaluator } from '@servicenow/glide'
+
 // Scripted REST API handler — POST /api/x_326171_ssdk_pack/rhino/search
 // Handles the entire qualified reference field search server-side:
 // evaluates the reference_qual or dynamic_ref_qual via GlideScopedEvaluator,
@@ -55,7 +57,7 @@ export function process(request: any, response: any): void {
             qualifier = evaluator.evaluateScript(dictGR, 'reference_qual') || '';
         } else if (qualType === 'dynamic') {
             var dynGR = new GlideRecord('sys_filter_option_dynamic');
-            if (dynGR.get(dictGR.getValue('dynamic_ref_qual'))) {
+            if (dynGR.get('sys_id', dictGR.getValue('dynamic_ref_qual'))) {
                 qualifier = evaluator.evaluateScript(dynGR, 'filter_script') || '';
             }
         }

@@ -7,7 +7,7 @@ Use these checklists alongside the reviewer system prompt. Paste the relevant ph
 ## Phase 1 — Scaffolding
 
 - [ ] Repository root contains valid SDK config files: `now.config.json`, `now.prebuild.mjs`, `package.json`, `.eslintrc`
-- [ ] `now.config.json` scope is `x_est_react_pack`
+- [ ] `now.config.json` scope is `x_326171_ssdk_pack`
 - [ ] SDK config files are unchanged from the original boilerplate — not recreated or modified
 - [ ] Hello User boilerplate code has been removed from `src/`
 - [ ] `src/client/npm-package/` exists with correct subfolders: `components/atoms/`, `components/molecules/`, `components/organisms/`, `services/`, `context/`, `theme/`, `types/`
@@ -159,4 +159,4 @@ Use these checklists alongside the reviewer system prompt. Paste the relevant ph
 - [ ] Explorer is wrapped in `ThemeProvider` and `ServiceNowProvider`
 - [ ] Explorer built using the component library itself (dogfooding)
 - [ ] No external syntax highlighting library
-- [ ] Accessible at `x_est_react_pack_component_explorer.do`
+- [ ] Accessible at `x_326171_ssdk_pack_component_explorer.do`

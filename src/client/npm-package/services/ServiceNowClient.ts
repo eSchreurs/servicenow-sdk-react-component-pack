@@ -55,10 +55,14 @@ export async function get<T>(path: string, params?: Record<string, string>): Pro
   return handleResponse<T>(response);
 }
 
-export async function post<T>(path: string, body: Record<string, unknown>): Promise<T> {
+export async function post<T>(
+  path: string,
+  body: Record<string, unknown>,
+  params?: Record<string, string>,
+): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(path, {
+    response = await fetch(buildUrl(path, params), {
       method: 'POST',
       headers: {
         Accept: 'application/json',
@@ -73,10 +77,14 @@ export async function post<T>(path: string, body: Record<string, unknown>): Prom
   return handleResponse<T>(response);
 }
 
-export async function patch<T>(path: string, body: Record<string, unknown>): Promise<T> {
+export async function patch<T>(
+  path: string,
+  body: Record<string, unknown>,
+  params?: Record<string, string>,
+): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(path, {
+    response = await fetch(buildUrl(path, params), {
       method: 'PATCH',
       headers: {
         Accept: 'application/json',

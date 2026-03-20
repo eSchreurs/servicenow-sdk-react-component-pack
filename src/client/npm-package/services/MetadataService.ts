@@ -6,7 +6,7 @@ import { cached } from './CacheService';
 import { get, TABLE_API_BASE } from './ServiceNowClient';
 import { RawRecord, FieldMetadata, ChoiceEntry } from '../types/index';
 
-const HIERARCHY_ENDPOINT = '/api/x_est_react_pack/hierarchy';
+const HIERARCHY_ENDPOINT = '/api/x_326171_ssdk_pack/hierarchy';
 
 // ---------------------------------------------------------------------------
 // getTableHierarchy

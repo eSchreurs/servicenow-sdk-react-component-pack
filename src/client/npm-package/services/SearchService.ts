@@ -9,7 +9,9 @@ const DEFAULT_LIMIT = 15;
 const DEFAULT_DISPLAY_VALUE_FIELD = 'name';
 
 // Searches a table for records matching term.
-// displayValueField defaults to 'name' if not provided.
+// displayValueField should be passed from FieldMetadata.referenceDisplayField when available.
+// 'name' is a last-resort fallback — most ServiceNow tables use it as display field,
+// but callers with metadata access should always pass the resolved value explicitly.
 // filter is an additional encoded query ANDed onto the search conditions.
 export async function searchRecords(
   table: string,

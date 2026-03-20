@@ -293,7 +293,7 @@ All `javascript:`-based qualifiers — both dynamic and advanced — are always 
 This endpoint is implemented in the ServiceNow companion app. It handles the entire qualified reference field search server-side — reading the qualifier from sys_dictionary, evaluating it, and returning search results. The qualifier expression never passes through the browser.
 
 **Method:** `POST`
-**Path:** `/api/x_est_react_pack/rhino/search`
+**Path:** `/api/x_326171_ssdk_pack/rhino/search`
 **Requires authentication:** Yes — caller must be authenticated via active session.
 
 #### Request body

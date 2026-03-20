@@ -1,13 +1,14 @@
-// Scripted REST API — GET /api/x_326171_ssdk_pack/hierarchy/{table}
+// Scripted REST API handler — GET /api/x_326171_ssdk_pack/hierarchy/{table}
 // Returns the full table hierarchy for the given table, ordered most-specific-first.
 // Requires authentication. Scoped to x_326171_ssdk_pack.
-(function process(request, response) {
+
+export function process(request: GlideScriptedRequest, response: GlideScriptedResponse): void {
     var table = request.pathParams.table;
 
     var hierarchy = new GlideTableHierarchy(table);
     var tables = hierarchy.getTables();
 
-    var result = [];
+    var result: string[] = [];
     for (var i = 0; i < tables.size(); i++) {
         result.push(tables.get(i).toString());
     }
@@ -19,4 +20,4 @@
     }
 
     response.setBody({ result: result });
-})(request, response);
+}

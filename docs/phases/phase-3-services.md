@@ -110,14 +110,20 @@ Implement as specified in Service Layer Spec Section 7:
 
 ## Companion App Endpoints
 
-Also implement the two Scripted REST API endpoints in `src/server/api/`:
+Also implement the two Scripted REST API endpoints. Each endpoint has two parts:
+- A Fluent definition in `src/fluent/api/` (`.now.ts`) — declares the REST API artifact
+- A handler module in `src/server/api/` (`.ts`) — exports the `process` function
 
 ### Hierarchy endpoint
+- Fluent definition: `src/fluent/api/hierarchy.now.ts`
+- Handler: `src/server/api/hierarchy.ts` — exports `process`
 - `GET /api/x_326171_ssdk_pack/hierarchy/{table}`
 - Uses `GlideTableHierarchy` — see Service Layer Spec Section 4
 - Returns `{ result: string[] }` ordered most-specific-first
 
 ### Rhino endpoint
+- Fluent definition: `src/fluent/api/rhino.now.ts`
+- Handler: `src/server/api/rhino.ts` — exports `process`
 - `POST /api/x_326171_ssdk_pack/rhino/search`
 - Uses `GlideScopedEvaluator.evaluateScript()` — see Service Layer Spec Section 7.2
 - Handles both `advanced` and `dynamic` qualifier types

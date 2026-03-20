@@ -8,14 +8,14 @@ import { process } from '../../server/api/rhino'
 RestApi({
     $id: Now.ID['rhino-api'],
     name: 'SDK Component Pack — Rhino Search',
-    service_id: 'rhino',
+    serviceId: 'rhino',
     consumes: 'application/json',
     routes: [
         {
             $id: Now.ID['rhino-api-post'],
             name: 'Search with qualifier',
             method: 'POST',
-            relative_path: '/search',
+            path: '/search',
             script: process,
         },
     ],

@@ -7,14 +7,14 @@ import { process } from '../../server/api/hierarchy'
 RestApi({
     $id: Now.ID['hierarchy-api'],
     name: 'SDK Component Pack — Hierarchy',
-    service_id: 'hierarchy',
+    serviceId: 'hierarchy',
     consumes: 'application/json',
     routes: [
         {
             $id: Now.ID['hierarchy-api-get'],
             name: 'Get table hierarchy',
             method: 'GET',
-            relative_path: '/{table}',
+            path: '/{table}',
             script: process,
         },
     ],

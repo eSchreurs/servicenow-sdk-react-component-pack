@@ -216,7 +216,8 @@ The two packages are tightly coupled: changes to a REST endpoint in the ServiceN
 | `src/client/npm-package/services/CacheService.ts` | Centralised in-memory cache |
 | `src/client/npm-package/services/ServiceNowClient.ts` | Base HTTP layer |
 | `src/client/npm-package/services/RhinoService.ts` | Qualifier evaluation endpoint |
-| `src/server/api/` | Scripted REST API endpoints (hierarchy, Rhino) |
+| `src/server/api/` | Scripted REST API handler modules (exported `process` functions) |
+| `src/fluent/api/` | Fluent RestApi definitions for Scripted REST API artifacts |
 
 ---
 

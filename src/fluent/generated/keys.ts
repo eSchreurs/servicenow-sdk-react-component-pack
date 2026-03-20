@@ -25,6 +25,22 @@ declare global {
                         table: 'sys_ux_lib_asset'
                         id: '3f214000d9bb4aa48898b427bc2e58f6'
                     }
+                    'hierarchy-api': {
+                        table: 'sys_ws_definition'
+                        id: 'ecdbd66a26a24556b58209e5bc4deffe'
+                    }
+                    'hierarchy-api-get': {
+                        table: 'sys_ws_operation'
+                        id: '66bc4306c39442c19fb3cf1ed8cd18ff'
+                    }
+                    'rhino-api': {
+                        table: 'sys_ws_definition'
+                        id: '2dd212aa38b54eb2aaba8280c1aef0a0'
+                    }
+                    'rhino-api-post': {
+                        table: 'sys_ws_operation'
+                        id: '8f235bee41b74e209c0227614cd9eefe'
+                    }
                 }
                 composite: [
                     {

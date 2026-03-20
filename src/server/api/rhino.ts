@@ -1,11 +1,12 @@
-// Scripted REST API — POST /api/x_326171_ssdk_pack/rhino/search
+// Scripted REST API handler — POST /api/x_326171_ssdk_pack/rhino/search
 // Handles the entire qualified reference field search server-side:
 // evaluates the reference_qual or dynamic_ref_qual via GlideScopedEvaluator,
 // builds the search query, queries the reference table, and returns result rows.
 // The qualifier expression is never exposed to the browser.
 // Returns { result: [] } on any failure — never throws an HTTP error.
 // Requires authentication. Scoped to x_326171_ssdk_pack.
-(function process(request, response) {
+
+export function process(request: GlideScriptedRequest, response: GlideScriptedResponse): void {
     try {
         var body = request.body.data;
         var table = body.table;
@@ -93,7 +94,7 @@
         gr.setLimit(limit);
         gr.query();
 
-        var results = [];
+        var results: Array<{ sysId: string; displayValue: string; columns: Array<{ field: string; value: string }> }> = [];
         while (gr.next()) {
             var columns = [{ field: displayField, value: gr.getDisplayValue(displayField) }];
             for (var j = 0; j < searchFields.length; j++) {
@@ -115,4 +116,4 @@
         // "No results found" rather than blocking the user.
         response.setBody({ result: [] });
     }
-})(request, response);
+}

@@ -37,21 +37,22 @@ export interface RecordFieldValue {
 
 export type ServiceNowRecord = Record<string, RecordFieldValue>;
 
-export interface FieldMetadata {
+export interface FieldData {
   name: string;
   label: string;
-  type: string;
-  maxLength: number;
   mandatory: boolean;
   readOnly: boolean;
-  choice: number;
+  maxLength: number;
+  type: string;
+  isChoiceField: boolean;
   reference?: string;
-  referenceLabel?: string;
   useReferenceQualifier?: 'simple' | 'dynamic' | 'advanced';
   referenceQual?: string;
   dynamicRefQual?: string;
   dependentOnField?: string;
-  referenceDisplayField?: string;  // resolved via secondary sys_dictionary query in MetadataService
+  choices: ChoiceEntry[];
+  value: string;
+  displayValue: string;
 }
 
 export interface ChoiceEntry {

@@ -9,10 +9,9 @@ export { ThemeContext, ThemeProvider, useTheme } from './context/ThemeContext';
 export type { ServiceNowConfig } from './context/ServiceNowContext';
 export { ServiceNowContext, ServiceNowProvider, useServiceNow } from './context/ServiceNowContext';
 
-// Services — exported as namespaces so consumers call e.g. MetadataService.getTableHierarchy()
+// Services — exported as namespaces so consumers call e.g. RecordService.getRecord()
 export * as CacheService from './services/CacheService';
 export * as ServiceNowClient from './services/ServiceNowClient';
-export * as MetadataService from './services/MetadataService';
 export * as RecordService from './services/RecordService';
 export * as SearchService from './services/SearchService';
 export * as RhinoService from './services/RhinoService';
@@ -26,7 +25,7 @@ export type {
   TableApiErrorResponse,
   RecordFieldValue,
   ServiceNowRecord,
-  FieldMetadata,
+  FieldData,
   ChoiceEntry,
   ReferenceSearchResult,
 } from './types/index';

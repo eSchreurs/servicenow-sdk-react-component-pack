@@ -25,21 +25,17 @@ declare global {
                         table: 'sys_ux_lib_asset'
                         id: '3f214000d9bb4aa48898b427bc2e58f6'
                     }
-                    'hierarchy-api': {
-                        table: 'sys_ws_definition'
-                        id: 'ecdbd66a26a24556b58209e5bc4deffe'
-                    }
-                    'hierarchy-api-get': {
-                        table: 'sys_ws_operation'
-                        id: '66bc4306c39442c19fb3cf1ed8cd18ff'
-                    }
                     'rhino-api': {
                         table: 'sys_ws_definition'
                         id: '2dd212aa38b54eb2aaba8280c1aef0a0'
                     }
-                    'rhino-api-post': {
+                    'rhino-api-metadata': {
                         table: 'sys_ws_operation'
-                        id: '8f235bee41b74e209c0227614cd9eefe'
+                        id: 'a1b2c3d4e5f64a5b8c9d0e1f2a3b4c5d'
+                    }
+                    'rhino-api-qualifier': {
+                        table: 'sys_ws_operation'
+                        id: 'f9e8d7c6b5a44b3c2d1e0f9e8d7c6b5a'
                     }
                 }
                 composite: [
@@ -65,6 +61,30 @@ declare global {
                         deleted: true
                         key: {
                             name: 'x_326171_ssdk_pack/main'
+                        }
+                    },
+                    {
+                        table: 'sys_ws_definition'
+                        id: 'ecdbd66a26a24556b58209e5bc4deffe'
+                        deleted: true
+                        key: {
+                            serviceId: 'hierarchy'
+                        }
+                    },
+                    {
+                        table: 'sys_ws_operation'
+                        id: '66bc4306c39442c19fb3cf1ed8cd18ff'
+                        deleted: true
+                        key: {
+                            name: 'Get table hierarchy'
+                        }
+                    },
+                    {
+                        table: 'sys_ws_operation'
+                        id: '8f235bee41b74e209c0227614cd9eefe'
+                        deleted: true
+                        key: {
+                            name: 'Resolve qualifier'
                         }
                     },
                 ]

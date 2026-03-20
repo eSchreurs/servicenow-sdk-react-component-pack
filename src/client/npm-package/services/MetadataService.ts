@@ -48,19 +48,25 @@ function mergeFieldRows(rows: RawRecord[], tables: string[]): FieldMetadata[] {
       return (ai === -1 ? Infinity : ai) - (bi === -1 ? Infinity : bi);
     });
 
-    // Booleans: OR across all rows.
-    const mandatory = sorted.some(r => r['mandatory']?.value === 'true');
-    const readOnly = sorted.some(r => r['read_only']?.value === 'true');
+    // Booleans: walk most-specific-first; first row with override_X flag wins.
+    // If no row has the override flag, the base (last) row's value is used.
+    const mandatory = resolveBoolean(sorted, 'mandatory', 'override_mandatory');
+    const readOnly = resolveBoolean(sorted, 'read_only', 'override_read_only');
 
     // Strings: first non-empty, most-specific-first.
     const label = firstNonEmpty(sorted.map(r => r['column_label']?.value ?? ''));
     const type = firstNonEmpty(sorted.map(r => r['internal_type']?.value ?? ''));
     const reference = firstNonEmpty(sorted.map(r => r['reference']?.value ?? ''));
     const referenceLabel = firstNonEmpty(sorted.map(r => r['reference']?.display_value ?? ''));
-    const referenceQualRaw = firstNonEmpty(sorted.map(r => r['use_reference_qualifier']?.value ?? ''));
-    const referenceQual = firstNonEmpty(sorted.map(r => r['reference_qual']?.value ?? ''));
-    const dynamicRefQual = firstNonEmpty(sorted.map(r => r['dynamic_ref_qual']?.value ?? ''));
     const dependentOnField = firstNonEmpty(sorted.map(r => r['dependent_on_field']?.value ?? ''));
+
+    // Qualifier fields are resolved as a group from one row.
+    // Walk most-specific-first; first row with override_reference_qualifier wins.
+    // If no row has the override flag, the base (last) row's qualifier is used.
+    const qualRow = resolveQualifierRow(sorted);
+    const referenceQualRaw = qualRow['use_reference_qualifier']?.value ?? '';
+    const referenceQual = qualRow['reference_qual']?.value ?? '';
+    const dynamicRefQual = qualRow['dynamic_ref_qual']?.value ?? '';
 
     // Numbers: first non-zero, most-specific-first.
     const maxLength = firstNonZero(sorted.map(r => parseInt(r['max_length']?.value ?? '0', 10)));
@@ -127,8 +133,10 @@ export async function getFieldMetadata(tables: string[], fields: string[]): Prom
       sysparm_display_value: 'all',
       sysparm_fields: [
         'name', 'element', 'column_label', 'internal_type', 'max_length',
-        'mandatory', 'read_only', 'choice', 'reference',
-        'use_reference_qualifier', 'reference_qual', 'dynamic_ref_qual',
+        'mandatory', 'override_mandatory',
+        'read_only', 'override_read_only',
+        'choice', 'reference',
+        'use_reference_qualifier', 'reference_qual', 'dynamic_ref_qual', 'override_reference_qualifier',
         'dependent_on_field',
       ].join(','),
     });
@@ -252,4 +260,31 @@ function firstNonEmpty(values: string[]): string {
 
 function firstNonZero(values: number[]): number {
   return values.find(v => v !== 0) ?? 0;
+}
+
+// Walk rows most-specific-first. The first row that has its override flag set
+// is authoritative — return that row's value. If no row has the override flag,
+// fall back to the base (last) row's value. This matches ServiceNow's behaviour:
+// override_mandatory / override_read_only explicitly force the value; without an
+// override the base table definition governs.
+function resolveBoolean(sorted: RawRecord[], valueField: string, overrideField: string): boolean {
+  for (const row of sorted) {
+    if (row[overrideField]?.value === 'true') {
+      return row[valueField]?.value === 'true';
+    }
+  }
+  return sorted[sorted.length - 1]?.[valueField]?.value === 'true';
+}
+
+// Qualifier fields (use_reference_qualifier, reference_qual, dynamic_ref_qual) must
+// be read as a set from a single row — mixing them across rows is meaningless.
+// Walk most-specific-first; the first row with override_reference_qualifier wins.
+// If no row has the override, use the base (last) row.
+function resolveQualifierRow(sorted: RawRecord[]): RawRecord {
+  for (const row of sorted) {
+    if (row['override_reference_qualifier']?.value === 'true') {
+      return row;
+    }
+  }
+  return sorted[sorted.length - 1] ?? {};
 }

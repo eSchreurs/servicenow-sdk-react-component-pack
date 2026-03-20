@@ -191,14 +191,20 @@ Returns the full table hierarchy as an ordered array from most specific to most 
 - Returns the table itself as the first element.
 
 #### `getFieldMetadata(tables: string[], fields: string[]): Promise<FieldMetadata[]>`
-Returns metadata for the specified fields, resolved across the given table hierarchy. Most specific table wins.
+Returns metadata for the specified fields, resolved across the given table hierarchy using ServiceNow's override flag semantics.
 
 - **Endpoint:** `GET /api/now/table/sys_dictionary?sysparm_query=nameIN{tables}^elementIN{fields}`
 - **Cache key:** `metadata:{tables.join(',')}:{fields.sort().join(',')}`
-- For each requested field, returns the metadata from the most specific table in the `tables` array that defines it.
+- Fetches: `name, element, column_label, internal_type, max_length, mandatory, override_mandatory, read_only, override_read_only, choice, reference, use_reference_qualifier, reference_qual, dynamic_ref_qual, override_reference_qualifier, dependent_on_field`
 - Returns one `FieldMetadata` entry per unique field name.
 - Fields not found anywhere in the hierarchy are omitted — callers handle missing metadata gracefully.
-- Maps raw sys_dictionary response fields to `FieldMetadata` domain model.
+
+**Merge algorithm** (rows sorted most-specific-first within each field):
+
+- **Boolean fields** (`mandatory`, `read_only`): walk rows most-specific-first. The first row whose override flag (`override_mandatory` / `override_read_only`) is `true` is authoritative — use its value and stop. If no row has the override flag, fall back to the base (last) row's value. OR-across-all is wrong: a child can explicitly set `mandatory=false` with the override flag, which removes mandatory from an otherwise-mandatory parent field.
+- **Qualifier fields** (`use_reference_qualifier`, `reference_qual`, `dynamic_ref_qual`): resolved as a set from one row — they must never be mixed across rows. Walk most-specific-first; the first row with `override_reference_qualifier=true` wins. If no row has the override, use the base (last) row.
+- **String fields** (`column_label`, `internal_type`, `reference`, `dependent_on_field`): first non-empty, most-specific-first.
+- **Number fields** (`max_length`, `choice`): first non-zero, most-specific-first.
 
 #### `getChoices(tables: string[], fields: string[]): Promise<Record<string, ChoiceEntry[]>>`
 Returns all choice entries for the specified fields, resolved across the table hierarchy.

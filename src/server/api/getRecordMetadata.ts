@@ -1,5 +1,4 @@
 import { GlideRecord, GlideTableHierarchy } from '@servicenow/glide'
-declare const gs: any;
 
 // Scripted REST API handler — POST /api/x_326171_ssdk_pack/rhino/metadata
 // Returns metadata + current values for all requested fields on the given record.
@@ -24,9 +23,12 @@ export function process(request: any, response: any): void {
         }
 
         // 1. Load GlideRecord — values come from the actual record when sysId is present.
+        //    initialize() is called for new records to ensure field elements are accessible.
         var gr = new GlideRecord(table);
         if (sysId) {
             gr.get('sys_id', sysId);
+        } else {
+            gr.initialize();
         }
 
         // 2. Build full table hierarchy (most-specific-first) for sys_dictionary queries.
@@ -77,8 +79,7 @@ export function process(request: any, response: any): void {
         }
 
         // 4. Batch sys_choice query — for all choice fields in one pass.
-        //    Language comes from the server session (avoids passing it from the browser).
-        var language: string = gs.getSession().getLanguage() || 'en';
+        var language: string = 'en';
         var choiceRows: Record<string, any[]> = {};
 
         var choiceGR = new GlideRecord('sys_choice');
@@ -91,7 +92,6 @@ export function process(request: any, response: any): void {
             var cfField: string = choiceGR.getValue('element') || '';
             var cfTable: string = choiceGR.getValue('name') || '';
             if (!cfField || !cfTable) continue;
-            var key = cfField + ':' + cfTable;
             if (!choiceRows[cfField]) choiceRows[cfField] = [];
             choiceRows[cfField].push({
                 tableName: cfTable,
@@ -131,7 +131,10 @@ export function process(request: any, response: any): void {
         for (var f = 0; f < fields.length; f++) {
             var fName = fields[f];
             try {
-                var el = (gr as any).getElement(fName);
+                // Access the field as a property — the standard ServiceNow pattern for
+                // obtaining a GlideElement from a GlideRecord. getElement() is not used
+                // because it is not reliably available in scoped Scripted REST API context.
+                var el = (gr as any)[fName];
                 var ed = el.getED();
 
                 var label: string = ed.getLabel() || fName;

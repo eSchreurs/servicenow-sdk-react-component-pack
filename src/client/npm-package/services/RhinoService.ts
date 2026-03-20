@@ -1,37 +1,26 @@
-// RhinoService — server-side qualified reference field search.
+// RhinoService — resolves the reference_qual or dynamic_ref_qual for a field.
 // Calls the companion app Scripted REST endpoint which evaluates the qualifier
-// via GlideScopedEvaluator, builds the search query, queries the reference table,
-// and returns result rows. The qualifier expression never passes through the browser.
-// Results are never cached.
+// via GlideScopedEvaluator server-side and returns the resolved encoded query string.
+// The qualifier script never passes through the browser.
+// Callers cache the result and pass it as the `filter` param to SearchService.searchRecords().
 
 import { post } from './ServiceNowClient';
-import { ReferenceSearchResult } from '../types/index';
 
 export const RHINO_ENDPOINT = '/api/x_326171_ssdk_pack/rhino/search';
 
-// Performs a fully qualified reference field search server-side.
-// table + sysId identify the record used as 'current' for qualifier evaluation.
-// field is the reference field name — the endpoint reads its qualifier from sys_dictionary.
-// On any error returns an empty array — never throws.
-// Only call for 'dynamic' or 'advanced' qualifier types — caller's responsibility.
-export async function searchWithQualifier(
+// Resolves the reference qualifier for `field` on `table`, evaluated against
+// the record identified by `sysId` (pass empty string for new records).
+// Returns the encoded query string (e.g. "active=true^group=abc123"),
+// or an empty string when there is no qualifier or on any error.
+export async function resolveQualifier(
   table: string,
   sysId: string,
   field: string,
-  searchTerm: string,
-  searchFields?: string[],
-  limit?: number,
-): Promise<ReferenceSearchResult[]> {
+): Promise<string> {
   try {
-    return await post<ReferenceSearchResult[]>(RHINO_ENDPOINT, {
-      table,
-      sysId,
-      field,
-      searchTerm,
-      searchFields: searchFields ?? [],
-      limit: limit ?? 15,
-    });
+    const data = await post<{ result: string }>(RHINO_ENDPOINT, { table, sysId, field });
+    return data.result ?? '';
   } catch {
-    return [];
+    return '';
   }
 }

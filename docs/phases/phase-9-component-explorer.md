@@ -124,7 +124,7 @@ Renders code in a styled `<pre><code>` block. No external syntax highlighting li
 
 The Component Explorer is registered as a UI Page in the companion app:
 - Name: `component_explorer`
-- Accessible at: `x_est_react_pack_component_explorer.do` on the instance
+- Accessible at: `x_326171_ssdk_pack_component_explorer.do` on the instance
 - Entry point: `component-explorer/index.html`
 
 ---

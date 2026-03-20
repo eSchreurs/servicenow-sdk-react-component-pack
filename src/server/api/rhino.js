@@ -1,61 +1,101 @@
-// Scripted REST API — POST /api/x_est_react_pack/rhino/resolve
-// Evaluates the reference_qual or dynamic_ref_qual for the given field using
-// GlideScopedEvaluator and returns the resolved encoded query string.
-// Handles both 'advanced' and 'dynamic' qualifier types.
-// Returns { result: "" } on any failure — never throws an HTTP error.
-// Requires authentication. Scoped to x_est_react_pack.
+// Scripted REST API — POST /api/x_326171_ssdk_pack/rhino/search
+// Handles the entire qualified reference field search server-side:
+// evaluates the reference_qual or dynamic_ref_qual via GlideScopedEvaluator,
+// builds the search query, queries the reference table, and returns result rows.
+// The qualifier expression is never exposed to the browser.
+// Returns { result: [] } on any failure — never throws an HTTP error.
+// Requires authentication. Scoped to x_326171_ssdk_pack.
 (function process(request, response) {
     try {
         var body = request.body.data;
         var table = body.table;
         var sysId = body.sysId;
         var field = body.field;
+        var searchTerm = body.searchTerm || '';
+        var searchFields = body.searchFields || [];
+        var limit = body.limit || 15;
 
-        // Load the record to use as the 'current' context for qualifier evaluation.
-        // For new records (sysId is empty string), current is an empty GlideRecord —
-        // all current.field references in the qualifier return empty values.
+        // 1. Load current record — provides GlideRecord context for qualifier evaluation.
+        //    For new records (sysId is empty string), current is an empty GlideRecord —
+        //    all current.field references in the qualifier return empty values.
         var current = new GlideRecord(table);
         if (sysId) {
             current.get(sysId);
         }
 
-        // Read the qualifier configuration from sys_dictionary.
+        // 2. Read qualifier configuration from sys_dictionary.
         var dictGR = new GlideRecord('sys_dictionary');
         dictGR.addQuery('name', table);
         dictGR.addQuery('element', field);
         dictGR.query();
 
         if (!dictGR.next()) {
-            response.setBody({ result: '' });
+            response.setBody({ result: [] });
             return;
         }
 
+        var referenceTable = dictGR.getValue('reference');
         var qualType = dictGR.getValue('use_reference_qualifier');
+
+        // 3. Evaluate qualifier using GlideScopedEvaluator against the actual GlideRecord
+        //    field — no raw string passing, no eval(), no temporary records.
+        var qualifier = '';
         var evaluator = new GlideScopedEvaluator();
         evaluator.putVariable('current', current);
 
-        var qualifier = '';
-
         if (qualType === 'advanced') {
-            // reference_qual holds the javascript: expression.
-            // GlideScopedEvaluator.evaluateScript reads directly from the GlideRecord field —
-            // no raw string passing. Strip the 'javascript:' prefix if present.
+            // reference_qual is a field on sys_dictionary — GlideScopedEvaluator reads
+            // it directly, so no javascript: prefix stripping is needed here.
             qualifier = evaluator.evaluateScript(dictGR, 'reference_qual') || '';
-
         } else if (qualType === 'dynamic') {
-            // dynamic_ref_qual holds the sys_id of the sys_filter_option_dynamic record.
-            // That record's filter_script field contains the script to evaluate.
             var dynGR = new GlideRecord('sys_filter_option_dynamic');
             if (dynGR.get(dictGR.getValue('dynamic_ref_qual'))) {
                 qualifier = evaluator.evaluateScript(dynGR, 'filter_script') || '';
             }
         }
 
-        response.setBody({ result: qualifier });
+        // 4. Build OR-combined CONTAINS search query.
+        //    Display value field of the reference table is always included first.
+        var displayField = dictGR.getDisplayValue('reference');
+        var searchParts = [displayField + 'CONTAINS' + searchTerm];
+        for (var i = 0; i < searchFields.length; i++) {
+            if (searchFields[i] !== displayField) {
+                searchParts.push(searchFields[i] + 'CONTAINS' + searchTerm);
+            }
+        }
+        var searchQuery = searchParts.join('^OR');
+
+        // 5. AND the resolved qualifier onto the search conditions.
+        if (qualifier) {
+            searchQuery = '(' + searchQuery + ')^' + qualifier;
+        }
+
+        // 6. Query the reference table and build results.
+        var gr = new GlideRecord(referenceTable);
+        gr.addEncodedQuery(searchQuery);
+        gr.setLimit(limit);
+        gr.query();
+
+        var results = [];
+        while (gr.next()) {
+            var columns = [{ field: displayField, value: gr.getDisplayValue(displayField) }];
+            for (var j = 0; j < searchFields.length; j++) {
+                if (searchFields[j] !== displayField) {
+                    columns.push({ field: searchFields[j], value: gr.getDisplayValue(searchFields[j]) });
+                }
+            }
+            results.push({
+                sysId: gr.getUniqueValue(),
+                displayValue: gr.getDisplayValue(),
+                columns: columns,
+            });
+        }
+
+        response.setBody({ result: results });
 
     } catch (e) {
-        // Never surface errors to the caller — return empty string so the reference
-        // field falls back to an unfiltered search rather than blocking the user.
-        response.setBody({ result: '' });
+        // Never surface errors — return empty results so the reference field shows
+        // "No results found" rather than blocking the user.
+        response.setBody({ result: [] });
     }
 })(request, response);

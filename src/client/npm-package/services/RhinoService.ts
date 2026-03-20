@@ -1,25 +1,37 @@
-// RhinoService — server-side evaluation of reference field qualifiers.
+// RhinoService — server-side qualified reference field search.
 // Calls the companion app Scripted REST endpoint which evaluates the qualifier
-// via GlideScopedEvaluator and returns an encoded query string.
+// via GlideScopedEvaluator, builds the search query, queries the reference table,
+// and returns result rows. The qualifier expression never passes through the browser.
 // Results are never cached.
 
 import { post } from './ServiceNowClient';
+import { ReferenceSearchResult } from '../types/index';
 
-export const RHINO_ENDPOINT = '/api/x_est_react_pack/rhino/resolve';
+export const RHINO_ENDPOINT = '/api/x_326171_ssdk_pack/rhino/search';
 
-// Calls the Rhino endpoint to resolve a dynamic or advanced qualifier for the
-// given field on the given record. Returns the encoded query string on success,
-// or an empty string on any error — never throws.
+// Performs a fully qualified reference field search server-side.
+// table + sysId identify the record used as 'current' for qualifier evaluation.
+// field is the reference field name — the endpoint reads its qualifier from sys_dictionary.
+// On any error returns an empty array — never throws.
 // Only call for 'dynamic' or 'advanced' qualifier types — caller's responsibility.
-export async function resolveQualifier(
+export async function searchWithQualifier(
   table: string,
   sysId: string,
   field: string,
-): Promise<string> {
+  searchTerm: string,
+  searchFields?: string[],
+  limit?: number,
+): Promise<ReferenceSearchResult[]> {
   try {
-    const resolvedFilter = await post<string>(RHINO_ENDPOINT, { table, sysId, field });
-    return resolvedFilter ?? '';
+    return await post<ReferenceSearchResult[]>(RHINO_ENDPOINT, {
+      table,
+      sysId,
+      field,
+      searchTerm,
+      searchFields: searchFields ?? [],
+      limit: limit ?? 15,
+    });
   } catch {
-    return '';
+    return [];
   }
 }

@@ -48,8 +48,8 @@ Implement as specified in Service Layer Spec Section 3:
 Implement as specified in Service Layer Spec Section 4:
 
 ### `getTableHierarchy(table)`
-- Calls companion app endpoint `GET /api/x_est_react_pack/hierarchy/{table}`
-- Define `HIERARCHY_ENDPOINT = '/api/x_est_react_pack/hierarchy'` as a constant
+- Calls companion app endpoint `GET /api/x_326171_ssdk_pack/hierarchy/{table}`
+- Define `HIERARCHY_ENDPOINT = '/api/x_326171_ssdk_pack/hierarchy'` as a constant
 - Cache key: `hierarchy:{table}`
 - **Important:** verify the returned array is ordered most-specific-first. If not, reverse it before caching.
 
@@ -98,31 +98,33 @@ Implement as specified in Service Layer Spec Section 6:
 ## 6. RhinoService (`src/client/services/RhinoService.ts`)
 
 Implement as specified in Service Layer Spec Section 7:
-- Define `RHINO_ENDPOINT = '/api/x_est_react_pack/rhino/resolve'` as a constant
-- `resolveQualifier(table, sysId, field)`
+- Define `RHINO_ENDPOINT = '/api/x_326171_ssdk_pack/rhino/search'` as a constant
+- `searchWithQualifier(table, sysId, field, searchTerm, searchFields?, limit?)`
+  - Calls the companion app endpoint which handles the entire qualified search server-side
   - Must only be called for `dynamic` or `advanced` qualifier types — caller's responsibility
-  - Returns encoded query string on success
-  - Returns empty string on any error — never throws
+  - Returns `ReferenceSearchResult[]` on success
+  - Returns empty array on any error — never throws
 - No caching
 
 ---
 
 ## Companion App Endpoints
 
-Also implement the two Scripted REST API endpoints in `/servicenow-app/src/server/`:
+Also implement the two Scripted REST API endpoints in `src/server/api/`:
 
 ### Hierarchy endpoint
-- `GET /api/x_est_react_pack/hierarchy/{table}`
+- `GET /api/x_326171_ssdk_pack/hierarchy/{table}`
 - Uses `GlideTableHierarchy` — see Service Layer Spec Section 4
 - Returns `{ result: string[] }` ordered most-specific-first
 
 ### Rhino endpoint
-- `POST /api/x_est_react_pack/rhino/resolve`
-- Uses `GlideScopedEvaluator.evaluateScript()` — see Service Layer Spec Section 7.1
+- `POST /api/x_326171_ssdk_pack/rhino/search`
+- Uses `GlideScopedEvaluator.evaluateScript()` — see Service Layer Spec Section 7.2
 - Handles both `advanced` and `dynamic` qualifier types
-- Returns `{ result: string }` — encoded query string or empty string on failure
+- Performs the entire search server-side: evaluates qualifier, builds search query, queries reference table
+- Returns `{ result: ReferenceSearchResult[] }` — empty array on any failure
 
-Both endpoints require authentication. Both are scoped to `x_est_react_pack`.
+Both endpoints require authentication. Both are scoped to `x_326171_ssdk_pack`.
 
 ---
 

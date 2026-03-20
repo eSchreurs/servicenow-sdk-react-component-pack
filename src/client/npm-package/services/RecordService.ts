@@ -35,8 +35,9 @@ export async function createRecord(
   fields: Record<string, string>,
 ): Promise<ServiceNowRecord> {
   const raw = await post<RawRecord>(
-    `${TABLE_API_BASE}/${table}?sysparm_display_value=all`,
+    `${TABLE_API_BASE}/${table}`,
     fields as Record<string, unknown>,
+    { sysparm_display_value: 'all' },
   );
   return mapRecord(raw);
 }
@@ -49,8 +50,9 @@ export async function updateRecord(
   fields: Record<string, string>,
 ): Promise<ServiceNowRecord> {
   const raw = await patch<RawRecord>(
-    `${TABLE_API_BASE}/${table}/${sysId}?sysparm_display_value=all`,
+    `${TABLE_API_BASE}/${table}/${sysId}`,
     fields as Record<string, unknown>,
+    { sysparm_display_value: 'all' },
   );
   return mapRecord(raw);
 }

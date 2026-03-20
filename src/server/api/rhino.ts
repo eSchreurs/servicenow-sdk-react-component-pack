@@ -1,5 +1,3 @@
-import { GlideRecord, GlideScopedEvaluator } from '@servicenow/glide'
-
 // Scripted REST API handler — POST /api/x_326171_ssdk_pack/rhino/search
 // Handles the entire qualified reference field search server-side:
 // evaluates the reference_qual or dynamic_ref_qual via GlideScopedEvaluator,

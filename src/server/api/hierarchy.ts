@@ -1,5 +1,3 @@
-import { GlideTableHierarchy } from '@servicenow/glide'
-
 // Scripted REST API handler — GET /api/x_326171_ssdk_pack/hierarchy/{table}
 // Returns the full table hierarchy for the given table, ordered most-specific-first.
 // Requires authentication. Scoped to x_326171_ssdk_pack.

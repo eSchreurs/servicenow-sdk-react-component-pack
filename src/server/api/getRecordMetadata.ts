@@ -4,8 +4,8 @@ import { GlideRecord, GlideTableHierarchy, gs } from '@servicenow/glide'
 // Returns metadata + current values for all requested fields on the given record.
 //
 // Metadata is resolved from sys_dictionary using the full table hierarchy so that
-// dictionary overrides (override_mandatory, override_read_only,
-// override_reference_qualifier, override_dependent_field) are applied correctly.
+// dictionary overrides (mandatory_override, read_only_override,
+// reference_qual_override, dependent_override) are applied correctly.
 // Choice lists are resolved from sys_choice (whole-table replacement semantics).
 // Language is read from the active session via gs.getSession().getLanguage().
 //
@@ -64,17 +64,17 @@ export function process(request: any, response: any): void {
                 internalType: dictGR.getValue('internal_type') || '',
                 maxLength: parseInt(dictGR.getValue('max_length') || '0', 10),
                 mandatory: dictGR.getValue('mandatory') === 'true',
-                overrideMandatory: dictGR.getValue('override_mandatory') === 'true',
+                overrideMandatory: dictGR.getValue('mandatory_override') === 'true',
                 readOnly: dictGR.getValue('read_only') === 'true',
-                overrideReadOnly: dictGR.getValue('override_read_only') === 'true',
+                overrideReadOnly: dictGR.getValue('read_only_override') === 'true',
                 choice: parseInt(dictGR.getValue('choice') || '0', 10),
                 reference: dictGR.getValue('reference') || '',
                 useReferenceQualifier: dictGR.getValue('use_reference_qualifier') || '',
                 referenceQual: dictGR.getValue('reference_qual') || '',
                 dynamicRefQual: dictGR.getValue('dynamic_ref_qual') || '',
-                overrideReferenceQualifier: dictGR.getValue('override_reference_qualifier') === 'true',
+                overrideReferenceQualifier: dictGR.getValue('reference_qual_override') === 'true',
                 dependentOnField: dictGR.getValue('dependent_on_field') || '',
-                overrideDependentField: dictGR.getValue('override_dependent_field') === 'true',
+                overrideDependentField: dictGR.getValue('dependent_override') === 'true',
             });
         }
 

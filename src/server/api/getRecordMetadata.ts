@@ -69,7 +69,6 @@ export function process(request: any, response: any): void {
         overrideGR.query();
 
         while (overrideGR.next()) {
-            gs.info(overrideGR.mandatory_override);
             var ofn: string = overrideGR.getValue('element') || '';
             if (!ofn || !baseRows[ofn]) continue;
             var row = baseRows[ofn];

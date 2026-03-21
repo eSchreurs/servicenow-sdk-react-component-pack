@@ -76,9 +76,8 @@ export function process(request: any, response: any): void {
             if (overrideGR.getValue('mandatory_override') === '1') row.mandatory = overrideGR.getValue('mandatory') === '1';
             if (overrideGR.getValue('read_only_override') === '1') row.readOnly = overrideGR.getValue('read_only') === '1';
             if (overrideGR.getValue('reference_qual_override') === '1') {
-                row.useReferenceQualifier = overrideGR.getValue('use_reference_qualifier') || '';
+                row.useReferenceQualifier = overrideGR.getValue('reference_qual_override') || '';
                 row.referenceQual = overrideGR.getValue('reference_qual') || '';
-                row.dynamicRefQual = overrideGR.getValue('dynamic_ref_qual') || '';
             }
             if (overrideGR.getValue('dependent_override') === '1') row.dependentOnField = overrideGR.getValue('dependent_on_field') || '';
         }
@@ -126,6 +125,15 @@ export function process(request: any, response: any): void {
             var row = baseRows[fName];
 
             if (!row) {
+                response.setBody({ 
+                    error: 'Field not found in sys_dictionary: ' + fName,
+                    tableList: tableList,
+                    foundFields: Object.keys(baseRows),
+                    requestedFields: fields
+                });
+                return;
+            }
+            /*if (!row) {
                 result[fName] = {
                     name: fName, label: fName, mandatory: false, readOnly: false,
                     maxLength: 0, type: 'string', isChoiceField: false, choices: [],
@@ -133,7 +141,7 @@ export function process(request: any, response: any): void {
                     dynamicRefQual: null, dependentOnField: null, value: '', displayValue: '',
                 };
                 continue;
-            }
+            }*/
 
             // Choices: whole-table replacement from most-specific table that has entries.
             var choices: any[] = [];

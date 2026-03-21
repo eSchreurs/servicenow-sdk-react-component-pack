@@ -3,31 +3,35 @@ import { GlideRecord, GlideTableHierarchy, gs } from '@servicenow/glide'
 // Scripted REST API handler — POST /api/x_326171_ssdk_pack/rhino/metadata
 // Returns metadata + current values for all requested fields on the given record.
 //
-// Metadata is resolved from sys_dictionary using the full table hierarchy so that
-// dictionary overrides (override_mandatory, override_read_only,
-// override_reference_qualifier, override_dependent_field) are applied correctly.
-// Choice lists are resolved from sys_choice (whole-table replacement semantics).
-// Language is read from the active session via gs.getSession().getLanguage().
+// gs is imported for TypeScript — it is not available as a global ambient type in
+// this tsconfig. The gs.getSession().getLanguage() call is wrapped in try/catch so
+// that any Rhino-level failure falls back to 'en' rather than propagating.
 //
-// Note: GlideElementDescriptor (getED()) is not available in scoped Scripted REST
-// API context, so all metadata is derived from direct sys_dictionary queries.
-//
-// Returns { result: { [field]: FieldData } } or { result: null, error: string }.
+// Returns { result: { [field]: FieldData }, _debug: {...} } or { result: null, error: string }.
+// _debug is temporary and should be removed once the response shape is confirmed correct.
 // Requires authentication. Scoped to x_326171_ssdk_pack.
 
 export function process(request: any, response: any): void {
+    var debug: any = { step: 'init' };
     try {
         var body = request.body.data;
         var table: string = body.table;
         var sysId: string = body.sysId;
         var fields: string[] = body.fields;
 
+        debug.step = 'input-parsed';
+        debug.table = table;
+        debug.sysId = sysId;
+        debug.fieldsReceived = fields;
+        debug.fieldsIsArray = Array.isArray(fields);
+
         if (!table || !fields || fields.length === 0) {
-            response.setBody({ result: null, error: 'table and fields are required' });
+            response.setBody({ result: null, error: 'table and fields are required', _debug: debug });
             return;
         }
 
         // 1. Load GlideRecord for value retrieval.
+        debug.step = 'gr-init';
         var gr = new GlideRecord(table);
         var recordLoaded = false;
         if (sysId) {
@@ -35,19 +39,32 @@ export function process(request: any, response: any): void {
         } else {
             gr.initialize();
         }
+        debug.recordLoaded = recordLoaded;
 
         // 2. Build full table hierarchy (most-specific-first) for sys_dictionary queries.
+        debug.step = 'hierarchy';
         var hierarchy = new GlideTableHierarchy(table);
         var tables = hierarchy.getTables();
         var tableList: string[] = [];
-        for (var i = 0; i < tables.length; i++) {
-            tableList.push(tables[i].toString());
+        // getTables() is typed as string[] but may return a Java ArrayList in Rhino.
+        // Handle both: JS arrays have .length, Java ArrayLists have .size().
+        var tablesAny = tables as any;
+        if (typeof tablesAny.size === 'function') {
+            for (var i = 0; i < tablesAny.size(); i++) {
+                tableList.push(String(tablesAny.get(i)));
+            }
+        } else {
+            for (var i = 0; i < tables.length; i++) {
+                tableList.push(tables[i].toString());
+            }
         }
         if (tableList.length > 0 && tableList[0] !== table) {
             tableList.reverse();
         }
+        debug.tableList = tableList;
 
         // 3. Single sys_dictionary query — all metadata fields including override flags.
+        debug.step = 'dict-query';
         var dictGR = new GlideRecord('sys_dictionary');
         dictGR.addQuery('name', 'IN', tableList.join(','));
         dictGR.addQuery('element', 'IN', fields.join(','));
@@ -77,6 +94,7 @@ export function process(request: any, response: any): void {
                 overrideDependentField: dictGR.getValue('override_dependent_field') === 'true',
             });
         }
+        debug.fieldRowKeys = Object.keys(fieldRows);
 
         // Sort rows most-specific-first based on position in the table hierarchy.
         function sortRows(rows: any[]): any[] {
@@ -87,8 +105,18 @@ export function process(request: any, response: any): void {
             });
         }
 
-        // 4. Batch sys_choice query — language from the active session.
-        var language: string = gs.getSession().getLanguage().toString() || 'en';
+        // 4. Batch sys_choice query.
+        // gs.getSession().getLanguage() — wrapped in try/catch so any Rhino failure
+        // (e.g. the module export differs from the runtime global) falls back to 'en'.
+        debug.step = 'lang';
+        var language = 'en';
+        try {
+            var sessionLang = gs.getSession().getLanguage();
+            if (sessionLang) language = String(sessionLang);
+        } catch (_) { /* use 'en' fallback */ }
+        debug.language = language;
+
+        debug.step = 'choice-query';
         var choiceRows: Record<string, any[]> = {};
 
         var choiceGR = new GlideRecord('sys_choice');
@@ -130,6 +158,7 @@ export function process(request: any, response: any): void {
         }
 
         // 5. Build result for each requested field.
+        debug.step = 'build-result';
         var result: Record<string, any> = {};
 
         for (var f = 0; f < fields.length; f++) {
@@ -236,9 +265,10 @@ export function process(request: any, response: any): void {
             };
         }
 
-        response.setBody({ result: result });
+        debug.step = 'done';
+        response.setBody({ result: result, _debug: debug });
 
     } catch (e) {
-        response.setBody({ result: null, error: String(e) });
+        response.setBody({ result: null, error: String(e), _debug: debug });
     }
 }

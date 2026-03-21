@@ -160,7 +160,7 @@ export function process(request: any, response: any): void {
             }
 
             var qt = row.useReferenceQualifier;
-            gs.info('qt: ' + qt);
+            gs.info('qt: ' + qt + ' ' + fName);
             result[fName] = {
                 name: fName,
                 label: row.label || fName,

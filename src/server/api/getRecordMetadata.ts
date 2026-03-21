@@ -204,44 +204,6 @@ export function process(request: any, response: any): void {
                 if (sorted[j].choice) { choiceValue = sorted[j].choice; break; }
             }
 
-            // Override rows for this field, sorted most-specific-first.
-            var sortedOverrides = sortRows(fieldOverrides[fName] || []);
-
-            // mandatory — check sys_dictionary_override first, else base row
-            var mandatory = base.mandatory;
-            for (var j = 0; j < sortedOverrides.length; j++) {
-                if (sortedOverrides[j].overrideMandatory) { mandatory = sortedOverrides[j].mandatory; break; }
-            }
-
-            // readOnly — check sys_dictionary_override first, else base row
-            var readOnly = base.readOnly;
-            for (var j = 0; j < sortedOverrides.length; j++) {
-                if (sortedOverrides[j].overrideReadOnly) { readOnly = sortedOverrides[j].readOnly; break; }
-            }
-
-            // dependentOnField — check sys_dictionary_override first, else base row
-            var dependentOnField: string | null = base.dependentOnField || null;
-            for (var j = 0; j < sortedOverrides.length; j++) {
-                if (sortedOverrides[j].overrideDependentField) { dependentOnField = sortedOverrides[j].dependentOnField || null; break; }
-            }
-
-            // qualifier fields — resolved as a group from one authoritative source:
-            // sys_dictionary_override with reference_qual_override wins, else base row
-            var useReferenceQualifier: string | null = null;
-            var referenceQual: string | null = base.referenceQual || null;
-            var dynamicRefQual: string | null = base.dynamicRefQual || null;
-            var baseQt = base.useReferenceQualifier;
-            useReferenceQualifier = (baseQt === 'simple' || baseQt === 'dynamic' || baseQt === 'advanced') ? baseQt : null;
-            for (var j = 0; j < sortedOverrides.length; j++) {
-                if (sortedOverrides[j].overrideReferenceQualifier) {
-                    var qt = sortedOverrides[j].useReferenceQualifier;
-                    useReferenceQualifier = (qt === 'simple' || qt === 'dynamic' || qt === 'advanced') ? qt : null;
-                    referenceQual = sortedOverrides[j].referenceQual || null;
-                    dynamicRefQual = sortedOverrides[j].dynamicRefQual || null;
-                    break;
-                }
-            }
-
             // Record values — only populated when a real record was loaded.
             var value = '';
             var displayValue = '';
@@ -250,23 +212,44 @@ export function process(request: any, response: any): void {
                 displayValue = gr.getDisplayValue(fName) || value;
             }
 
-            result[fName] = {
+            // Build the result object from the base sys_dictionary row.
+            var baseQt = base.useReferenceQualifier;
+            var fieldData: any = {
                 name: fName,
                 label: label,
-                mandatory: mandatory,
-                readOnly: readOnly,
+                mandatory: base.mandatory,
+                readOnly: base.readOnly,
                 maxLength: maxLength,
                 type: type,
                 isChoiceField: choiceValue > 0,
                 choices: choiceValue > 0 ? resolveChoices(fName) : [],
                 reference: reference || null,
-                useReferenceQualifier: reference ? useReferenceQualifier : null,
-                referenceQual: reference ? referenceQual : null,
-                dynamicRefQual: reference ? dynamicRefQual : null,
-                dependentOnField: dependentOnField,
+                useReferenceQualifier: reference ? ((baseQt === 'simple' || baseQt === 'dynamic' || baseQt === 'advanced') ? baseQt : null) : null,
+                referenceQual: reference ? (base.referenceQual || null) : null,
+                dynamicRefQual: reference ? (base.dynamicRefQual || null) : null,
+                dependentOnField: base.dependentOnField || null,
                 value: value,
                 displayValue: displayValue,
             };
+
+            // Apply sys_dictionary_override patches (most-specific-first, first win per flag).
+            var sortedOverrides = sortRows(fieldOverrides[fName] || []);
+            var appliedMandatory = false, appliedReadOnly = false, appliedRefQual = false, appliedDependent = false;
+            for (var j = 0; j < sortedOverrides.length; j++) {
+                var ov = sortedOverrides[j];
+                if (!appliedMandatory && ov.overrideMandatory) { fieldData.mandatory = ov.mandatory; appliedMandatory = true; }
+                if (!appliedReadOnly && ov.overrideReadOnly) { fieldData.readOnly = ov.readOnly; appliedReadOnly = true; }
+                if (!appliedDependent && ov.overrideDependentField) { fieldData.dependentOnField = ov.dependentOnField || null; appliedDependent = true; }
+                if (!appliedRefQual && ov.overrideReferenceQualifier) {
+                    var qt = ov.useReferenceQualifier;
+                    fieldData.useReferenceQualifier = fieldData.reference ? ((qt === 'simple' || qt === 'dynamic' || qt === 'advanced') ? qt : null) : null;
+                    fieldData.referenceQual = fieldData.reference ? (ov.referenceQual || null) : null;
+                    fieldData.dynamicRefQual = fieldData.reference ? (ov.dynamicRefQual || null) : null;
+                    appliedRefQual = true;
+                }
+            }
+
+            result[fName] = fieldData;
         }
 
         response.setBody({ result: result });

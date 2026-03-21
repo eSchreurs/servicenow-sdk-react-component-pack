@@ -4,9 +4,9 @@ import { GlideRecord, GlideTableHierarchy, gs } from '@servicenow/glide'
 // Returns metadata + current values for all requested fields on the given record.
 //
 // Base metadata is resolved from sys_dictionary using the full table hierarchy.
-// Dictionary overrides (mandatory_override, read_only_override,
-// reference_qual_override, dependent_override) are read from the separate
-// sys_dictionary_override table and applied on top of the base values.
+// sys_dictionary_override rows are then applied: for each flagged property the
+// override value is written directly into the base fieldRow, so result-building
+// reads the already-correct values without any extra override logic.
 // Choice lists are resolved from sys_choice (whole-table replacement semantics).
 // Language is read from the active session via gs.getSession().getLanguage().
 //
@@ -48,7 +48,7 @@ export function process(request: any, response: any): void {
             tableList.reverse();
         }
 
-        // 3. Single sys_dictionary query — base metadata fields (no override flags here).
+        // 3. Single sys_dictionary query — base metadata fields.
         var dictGR = new GlideRecord('sys_dictionary');
         dictGR.addQuery('name', 'IN', tableList.join(','));
         dictGR.addQuery('element', 'IN', fields.join(','));
@@ -84,31 +84,29 @@ export function process(request: any, response: any): void {
             });
         }
 
-        // 3b. sys_dictionary_override query — override flags and their replacement values.
-        // Each row carries both the flag (e.g. mandatory_override) and the replacement value.
+        // 3b. Patch fieldRows with sys_dictionary_override values.
+        // sortRows returns a shallow copy so sorted entries are the same object references
+        // as in fieldRows — patching them patches the originals.
+        // The base row (least-specific, last in sorted order) is patched so that
+        // result-building can read base.mandatory etc. and get the overridden value.
         var overrideGR = new GlideRecord('sys_dictionary_override');
         overrideGR.addQuery('name', 'IN', tableList.join(','));
         overrideGR.addQuery('element', 'IN', fields.join(','));
         overrideGR.query();
 
-        var fieldOverrides: Record<string, any[]> = {};
         while (overrideGR.next()) {
             var ofn: string = overrideGR.getValue('element') || '';
-            if (!ofn) continue;
-            if (!fieldOverrides[ofn]) fieldOverrides[ofn] = [];
-            fieldOverrides[ofn].push({
-                tableName: overrideGR.getValue('name') || '',
-                overrideMandatory: overrideGR.getValue('mandatory_override') === 'true',
-                mandatory: overrideGR.getValue('mandatory') === 'true',
-                overrideReadOnly: overrideGR.getValue('read_only_override') === 'true',
-                readOnly: overrideGR.getValue('read_only') === 'true',
-                overrideReferenceQualifier: overrideGR.getValue('reference_qual_override') === 'true',
-                useReferenceQualifier: overrideGR.getValue('use_reference_qualifier') || '',
-                referenceQual: overrideGR.getValue('reference_qual') || '',
-                dynamicRefQual: overrideGR.getValue('dynamic_ref_qual') || '',
-                overrideDependentField: overrideGR.getValue('dependent_override') === 'true',
-                dependentOnField: overrideGR.getValue('dependent_on_field') || '',
-            });
+            if (!ofn || !fieldRows[ofn]) continue;
+            var sorted = sortRows(fieldRows[ofn]);
+            var baseRow = sorted[sorted.length - 1];
+            if (overrideGR.getValue('mandatory_override') === 'true') baseRow.mandatory = overrideGR.getValue('mandatory') === 'true';
+            if (overrideGR.getValue('read_only_override') === 'true') baseRow.readOnly = overrideGR.getValue('read_only') === 'true';
+            if (overrideGR.getValue('reference_qual_override') === 'true') {
+                baseRow.useReferenceQualifier = overrideGR.getValue('use_reference_qualifier') || '';
+                baseRow.referenceQual = overrideGR.getValue('reference_qual') || '';
+                baseRow.dynamicRefQual = overrideGR.getValue('dynamic_ref_qual') || '';
+            }
+            if (overrideGR.getValue('dependent_override') === 'true') baseRow.dependentOnField = overrideGR.getValue('dependent_on_field') || '';
         }
 
         // 4. Batch sys_choice query — language from the active session.
@@ -154,6 +152,8 @@ export function process(request: any, response: any): void {
         }
 
         // 5. Build result for each requested field.
+        // fieldRows base rows are already patched with any dictionary override values,
+        // so no separate override logic is needed here.
         var result: Record<string, any> = {};
 
         for (var f = 0; f < fields.length; f++) {
@@ -174,31 +174,31 @@ export function process(request: any, response: any): void {
             var sorted = sortRows(rows);
             var base = sorted[sorted.length - 1];
 
-            // label — no override flag: first non-empty, most-specific-first
+            // label — first non-empty, most-specific-first
             var label = fName;
             for (var j = 0; j < sorted.length; j++) {
                 if (sorted[j].columnLabel) { label = sorted[j].columnLabel; break; }
             }
 
-            // type — no override flag: first non-empty, most-specific-first
+            // type — first non-empty, most-specific-first
             var type = 'string';
             for (var j = 0; j < sorted.length; j++) {
                 if (sorted[j].internalType) { type = sorted[j].internalType; break; }
             }
 
-            // reference — no override flag: first non-empty, most-specific-first
+            // reference — first non-empty, most-specific-first
             var reference = '';
             for (var j = 0; j < sorted.length; j++) {
                 if (sorted[j].reference) { reference = sorted[j].reference; break; }
             }
 
-            // maxLength — no override flag: first non-zero, most-specific-first
+            // maxLength — first non-zero, most-specific-first
             var maxLength = 0;
             for (var j = 0; j < sorted.length; j++) {
                 if (sorted[j].maxLength) { maxLength = sorted[j].maxLength; break; }
             }
 
-            // choice — no override flag: first non-zero, most-specific-first
+            // choice — first non-zero, most-specific-first
             var choiceValue = 0;
             for (var j = 0; j < sorted.length; j++) {
                 if (sorted[j].choice) { choiceValue = sorted[j].choice; break; }
@@ -212,9 +212,8 @@ export function process(request: any, response: any): void {
                 displayValue = gr.getDisplayValue(fName) || value;
             }
 
-            // Build the result object from the base sys_dictionary row.
             var baseQt = base.useReferenceQualifier;
-            var fieldData: any = {
+            result[fName] = {
                 name: fName,
                 label: label,
                 mandatory: base.mandatory,
@@ -231,25 +230,6 @@ export function process(request: any, response: any): void {
                 value: value,
                 displayValue: displayValue,
             };
-
-            // Apply sys_dictionary_override patches (most-specific-first, first win per flag).
-            var sortedOverrides = sortRows(fieldOverrides[fName] || []);
-            var appliedMandatory = false, appliedReadOnly = false, appliedRefQual = false, appliedDependent = false;
-            for (var j = 0; j < sortedOverrides.length; j++) {
-                var ov = sortedOverrides[j];
-                if (!appliedMandatory && ov.overrideMandatory) { fieldData.mandatory = ov.mandatory; appliedMandatory = true; }
-                if (!appliedReadOnly && ov.overrideReadOnly) { fieldData.readOnly = ov.readOnly; appliedReadOnly = true; }
-                if (!appliedDependent && ov.overrideDependentField) { fieldData.dependentOnField = ov.dependentOnField || null; appliedDependent = true; }
-                if (!appliedRefQual && ov.overrideReferenceQualifier) {
-                    var qt = ov.useReferenceQualifier;
-                    fieldData.useReferenceQualifier = fieldData.reference ? ((qt === 'simple' || qt === 'dynamic' || qt === 'advanced') ? qt : null) : null;
-                    fieldData.referenceQual = fieldData.reference ? (ov.referenceQual || null) : null;
-                    fieldData.dynamicRefQual = fieldData.reference ? (ov.dynamicRefQual || null) : null;
-                    appliedRefQual = true;
-                }
-            }
-
-            result[fName] = fieldData;
         }
 
         response.setBody({ result: result });

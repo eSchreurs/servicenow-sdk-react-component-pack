@@ -1,4 +1,4 @@
-import { GlideRecord, GlideTableHierarchy } from '@servicenow/glide'
+import { GlideRecord, GlideTableHierarchy, gs } from '@servicenow/glide'
 
 // Scripted REST API handler — POST /api/x_326171_ssdk_pack/rhino/metadata
 // Returns metadata + current values for all requested fields on the given record.
@@ -69,6 +69,7 @@ export function process(request: any, response: any): void {
         overrideGR.query();
 
         while (overrideGR.next()) {
+            gs.info(overrideGR.mandatory_override);
             var ofn: string = overrideGR.getValue('element') || '';
             if (!ofn || !baseRows[ofn]) continue;
             var row = baseRows[ofn];

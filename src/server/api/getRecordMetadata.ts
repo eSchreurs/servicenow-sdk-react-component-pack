@@ -68,36 +68,20 @@ export function process(request: any, response: any): void {
         overrideGR.addQuery('element', 'IN', fields.join(','));
         overrideGR.query();
 
-        var overrideDebug: any[] = [];
         while (overrideGR.next()) {
-            var ofn: string = overrideGR.getValue('element') || '';
-            overrideDebug.push({
-                element: ofn,
-                name: overrideGR.getValue('name'),
-                mandatory_override: overrideGR.getValue('mandatory_override'),
-                mandatory: overrideGR.getValue('mandatory'),
-                baseRowExists: !!baseRows[ofn],
-                tableListContains: tableList.indexOf(overrideGR.getValue('name') || '') !== -1,
-                tableList: tableList
-            });
-        }
-        response.setBody({ debug: overrideDebug, baseRows: baseRows });
-        return;
-       
-       /*while (overrideGR.next()) {
             gs.info(overrideGR.mandatory_override);
             var ofn: string = overrideGR.getValue('element') || '';
             if (!ofn || !baseRows[ofn]) continue;
             var row = baseRows[ofn];
-            if (overrideGR.getValue('mandatory_override') === 'true') row.mandatory = overrideGR.getValue('mandatory') === 'true';
-            if (overrideGR.getValue('read_only_override') === 'true') row.readOnly = overrideGR.getValue('read_only') === 'true';
-            if (overrideGR.getValue('reference_qual_override') === 'true') {
+            if (overrideGR.getValue('mandatory_override') === '1') row.mandatory = overrideGR.getValue('mandatory') === '1';
+            if (overrideGR.getValue('read_only_override') === '1') row.readOnly = overrideGR.getValue('read_only') === '1';
+            if (overrideGR.getValue('reference_qual_override') === '1') {
                 row.useReferenceQualifier = overrideGR.getValue('use_reference_qualifier') || '';
                 row.referenceQual = overrideGR.getValue('reference_qual') || '';
                 row.dynamicRefQual = overrideGR.getValue('dynamic_ref_qual') || '';
             }
-            if (overrideGR.getValue('dependent_override') === 'true') row.dependentOnField = overrideGR.getValue('dependent_on_field') || '';
-        }*/
+            if (overrideGR.getValue('dependent_override') === '1') row.dependentOnField = overrideGR.getValue('dependent_on_field') || '';
+        }
 
         // Step 3 — Choices from sys_choice.
         // Only query for fields that are choice fields. Whole-table replacement: use entries

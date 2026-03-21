@@ -55,6 +55,7 @@ export function process(request: any, response: any): void {
                     reference: dictGR.getValue('reference') || '',
                     useReferenceQualifier: dictGR.getValue('use_reference_qualifier') || '',
                     referenceQual: dictGR.getValue('reference_qual') || '',
+                    referenceQualCondition: dictGR.getValue('reference_qual_condition') || '',
                     dynamicRefQual: dictGR.getValue('dynamic_ref_qual') || '',
                     dependentOnField: dictGR.getValue('dependent_on_field') || '',
                 };
@@ -159,6 +160,7 @@ export function process(request: any, response: any): void {
             }
 
             var qt = row.useReferenceQualifier;
+            gs.info('qt: ' + qt);
             result[fName] = {
                 name: fName,
                 label: row.label || fName,

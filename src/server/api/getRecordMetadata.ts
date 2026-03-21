@@ -68,7 +68,23 @@ export function process(request: any, response: any): void {
         overrideGR.addQuery('element', 'IN', fields.join(','));
         overrideGR.query();
 
+        var overrideDebug: any[] = [];
         while (overrideGR.next()) {
+            var ofn: string = overrideGR.getValue('element') || '';
+            overrideDebug.push({
+                element: ofn,
+                name: overrideGR.getValue('name'),
+                mandatory_override: overrideGR.getValue('mandatory_override'),
+                mandatory: overrideGR.getValue('mandatory'),
+                baseRowExists: !!baseRows[ofn],
+                tableListContains: tableList.indexOf(overrideGR.getValue('name') || '') !== -1,
+                tableList: tableList
+            });
+        }
+        response.setBody({ debug: overrideDebug, baseRows: baseRows });
+        return;
+       
+       /*while (overrideGR.next()) {
             gs.info(overrideGR.mandatory_override);
             var ofn: string = overrideGR.getValue('element') || '';
             if (!ofn || !baseRows[ofn]) continue;
@@ -81,7 +97,7 @@ export function process(request: any, response: any): void {
                 row.dynamicRefQual = overrideGR.getValue('dynamic_ref_qual') || '';
             }
             if (overrideGR.getValue('dependent_override') === 'true') row.dependentOnField = overrideGR.getValue('dependent_on_field') || '';
-        }
+        }*/
 
         // Step 3 — Choices from sys_choice.
         // Only query for fields that are choice fields. Whole-table replacement: use entries

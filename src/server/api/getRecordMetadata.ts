@@ -1,12 +1,17 @@
-import { GlideRecord, GlideTableHierarchy } from '@servicenow/glide'
+import { GlideRecord, GlideTableHierarchy, gs } from '@servicenow/glide'
 
 // Scripted REST API handler — POST /api/x_326171_ssdk_pack/rhino/metadata
 // Returns metadata + current values for all requested fields on the given record.
-// Uses GlideElementDescriptor for correct mandatory/readOnly resolution (includes
-// the full dictionary override chain without manual merging).
-// Qualifier config (use_reference_qualifier / reference_qual / dynamic_ref_qual) is
-// still read from sys_dictionary with override_reference_qualifier awareness, because
-// ed.getRefQualType() and ed.getRefQualString() are not available in scoped apps.
+//
+// Metadata is resolved from sys_dictionary using the full table hierarchy so that
+// dictionary overrides (override_mandatory, override_read_only,
+// override_reference_qualifier, override_dependent_field) are applied correctly.
+// Choice lists are resolved from sys_choice (whole-table replacement semantics).
+// Language is read from the active session via gs.getSession().getLanguage().
+//
+// Note: GlideElementDescriptor (getED()) is not available in scoped Scripted REST
+// API context, so all metadata is derived from direct sys_dictionary queries.
+//
 // Returns { result: { [field]: FieldData } } or { result: null, error: string }.
 // Requires authentication. Scoped to x_326171_ssdk_pack.
 
@@ -22,11 +27,11 @@ export function process(request: any, response: any): void {
             return;
         }
 
-        // 1. Load GlideRecord — values come from the actual record when sysId is present.
-        //    initialize() is called for new records to ensure field elements are accessible.
+        // 1. Load GlideRecord for value retrieval.
         var gr = new GlideRecord(table);
+        var recordLoaded = false;
         if (sysId) {
-            gr.get('sys_id', sysId);
+            recordLoaded = gr.get('sys_id', sysId);
         } else {
             gr.initialize();
         }
@@ -42,44 +47,48 @@ export function process(request: any, response: any): void {
             tableList.reverse();
         }
 
-        // 3. Batch sys_dictionary query — qualifier config for all requested fields.
+        // 3. Single sys_dictionary query — all metadata fields including override flags.
         var dictGR = new GlideRecord('sys_dictionary');
         dictGR.addQuery('name', 'IN', tableList.join(','));
         dictGR.addQuery('element', 'IN', fields.join(','));
         dictGR.query();
 
-        // Group rows by field name; within each group sort most-specific-first.
-        var qualRows: Record<string, any[]> = {};
+        var fieldRows: Record<string, any[]> = {};
         while (dictGR.next()) {
-            var fieldName: string = dictGR.getValue('element') || '';
-            if (!fieldName) continue;
-            if (!qualRows[fieldName]) qualRows[fieldName] = [];
-            qualRows[fieldName].push({
+            var fn: string = dictGR.getValue('element') || '';
+            if (!fn) continue;
+            if (!fieldRows[fn]) fieldRows[fn] = [];
+            fieldRows[fn].push({
                 tableName: dictGR.getValue('name') || '',
+                columnLabel: dictGR.getValue('column_label') || '',
+                internalType: dictGR.getValue('internal_type') || '',
+                maxLength: parseInt(dictGR.getValue('max_length') || '0', 10),
+                mandatory: dictGR.getValue('mandatory') === 'true',
+                overrideMandatory: dictGR.getValue('override_mandatory') === 'true',
+                readOnly: dictGR.getValue('read_only') === 'true',
+                overrideReadOnly: dictGR.getValue('override_read_only') === 'true',
+                choice: parseInt(dictGR.getValue('choice') || '0', 10),
+                reference: dictGR.getValue('reference') || '',
                 useReferenceQualifier: dictGR.getValue('use_reference_qualifier') || '',
                 referenceQual: dictGR.getValue('reference_qual') || '',
                 dynamicRefQual: dictGR.getValue('dynamic_ref_qual') || '',
-                overrideReferenceQualifier: dictGR.getValue('override_reference_qualifier') || '',
+                overrideReferenceQualifier: dictGR.getValue('override_reference_qualifier') === 'true',
+                dependentOnField: dictGR.getValue('dependent_on_field') || '',
+                overrideDependentField: dictGR.getValue('override_dependent_field') === 'true',
             });
         }
 
-        // Resolve the authoritative qualifier row for a field (override-aware).
-        function resolveQualifierConfig(rows: any[]): any {
-            var sorted = rows.slice().sort(function(a: any, b: any) {
+        // Sort rows most-specific-first based on position in the table hierarchy.
+        function sortRows(rows: any[]): any[] {
+            return rows.slice().sort(function(a: any, b: any) {
                 var ai = tableList.indexOf(a.tableName);
                 var bi = tableList.indexOf(b.tableName);
                 return (ai === -1 ? Infinity : ai) - (bi === -1 ? Infinity : bi);
             });
-            for (var j = 0; j < sorted.length; j++) {
-                if (sorted[j].overrideReferenceQualifier === 'true') {
-                    return sorted[j];
-                }
-            }
-            return sorted[sorted.length - 1] || {};
         }
 
-        // 4. Batch sys_choice query — for all choice fields in one pass.
-        var language: string = 'en';
+        // 4. Batch sys_choice query — language from the active session.
+        var language: string = gs.getSession().getLanguage().toString() || 'en';
         var choiceRows: Record<string, any[]> = {};
 
         var choiceGR = new GlideRecord('sys_choice');
@@ -102,19 +111,14 @@ export function process(request: any, response: any): void {
             });
         }
 
-        // For each choice field, keep only rows from the most-specific table that has entries,
-        // then sort by sequence.
+        // Whole-table replacement: keep choices from the most-specific table that has entries.
         function resolveChoices(fName: string): any[] {
             var rows = choiceRows[fName];
             if (!rows || rows.length === 0) return [];
-            // Find most-specific table with entries.
             var chosen: any[] | undefined;
             for (var t = 0; t < tableList.length; t++) {
                 var tableChoices = rows.filter(function(r: any) { return r.tableName === tableList[t]; });
-                if (tableChoices.length > 0) {
-                    chosen = tableChoices;
-                    break;
-                }
+                if (tableChoices.length > 0) { chosen = tableChoices; break; }
             }
             if (!chosen) return [];
             chosen.sort(function(a: any, b: any) { return a.sequence - b.sequence; });
@@ -125,63 +129,111 @@ export function process(request: any, response: any): void {
             });
         }
 
-        // 5. Build result using GlideElementDescriptor for each field.
+        // 5. Build result for each requested field.
         var result: Record<string, any> = {};
 
         for (var f = 0; f < fields.length; f++) {
             var fName = fields[f];
-            try {
-                // Access the field as a property — the standard ServiceNow pattern for
-                // obtaining a GlideElement from a GlideRecord. getElement() is not used
-                // because it is not reliably available in scoped Scripted REST API context.
-                var el = (gr as any)[fName];
-                var ed = el.getED();
+            var rows = fieldRows[fName];
 
-                var label: string = ed.getLabel() || fName;
-                var mandatory: boolean = ed.isMandatory();
-                var readOnly: boolean = ed.isReadOnly();
-                var maxLength: number = ed.getLength() || 0;
-                var type: string = ed.getInternalType() || 'string';
-                var isChoiceField: boolean = ed.isChoiceTable();
-                var reference: string = ed.getReference() || '';
-
-                var value: string = '';
-                var displayValue: string = '';
-                if (sysId) {
-                    value = gr.getValue(fName) || '';
-                    displayValue = gr.getDisplayValue(fName) || value;
-                }
-
-                var fieldData: any = {
-                    name: fName,
-                    label: label,
-                    mandatory: mandatory,
-                    readOnly: readOnly,
-                    maxLength: maxLength,
-                    type: type,
-                    isChoiceField: isChoiceField,
-                    choices: isChoiceField ? resolveChoices(fName) : [],
-                    value: value,
-                    displayValue: displayValue,
+            // Field not found in dictionary — include with safe defaults rather than skipping.
+            if (!rows || rows.length === 0) {
+                result[fName] = {
+                    name: fName, label: fName, mandatory: false, readOnly: false,
+                    maxLength: 0, type: 'string', isChoiceField: false, choices: [],
+                    reference: null, useReferenceQualifier: null, referenceQual: null,
+                    dynamicRefQual: null, dependentOnField: null, value: '', displayValue: '',
                 };
-
-                if (reference) fieldData.reference = reference;
-
-                // Qualifier config from sys_dictionary (override-aware).
-                if (reference && qualRows[fName]) {
-                    var qc = resolveQualifierConfig(qualRows[fName]);
-                    var qt: string = qc.useReferenceQualifier || '';
-                    if (qt === 'simple' || qt === 'dynamic' || qt === 'advanced') {
-                        fieldData.useReferenceQualifier = qt;
-                    }
-                    if (qc.referenceQual) fieldData.referenceQual = qc.referenceQual;
-                    if (qc.dynamicRefQual) fieldData.dynamicRefQual = qc.dynamicRefQual;
-                }
-
-                result[fName] = fieldData;
-            } catch (fieldErr) {
-                // Unknown field — skip silently.
+                continue;
             }
+
+            var sorted = sortRows(rows);
+            var base = sorted[sorted.length - 1];
+
+            // label — no override flag: first non-empty, most-specific-first
+            var label = fName;
+            for (var j = 0; j < sorted.length; j++) {
+                if (sorted[j].columnLabel) { label = sorted[j].columnLabel; break; }
+            }
+
+            // type — no override flag: first non-empty, most-specific-first
+            var type = 'string';
+            for (var j = 0; j < sorted.length; j++) {
+                if (sorted[j].internalType) { type = sorted[j].internalType; break; }
+            }
+
+            // reference — no override flag: first non-empty, most-specific-first
+            var reference = '';
+            for (var j = 0; j < sorted.length; j++) {
+                if (sorted[j].reference) { reference = sorted[j].reference; break; }
+            }
+
+            // maxLength — no override flag: first non-zero, most-specific-first
+            var maxLength = 0;
+            for (var j = 0; j < sorted.length; j++) {
+                if (sorted[j].maxLength) { maxLength = sorted[j].maxLength; break; }
+            }
+
+            // choice — no override flag: first non-zero, most-specific-first
+            var choiceValue = 0;
+            for (var j = 0; j < sorted.length; j++) {
+                if (sorted[j].choice) { choiceValue = sorted[j].choice; break; }
+            }
+
+            // mandatory — override_mandatory flag: first matching row wins, else base row
+            var mandatory = base.mandatory;
+            for (var j = 0; j < sorted.length; j++) {
+                if (sorted[j].overrideMandatory) { mandatory = sorted[j].mandatory; break; }
+            }
+
+            // readOnly — override_read_only flag: first matching row wins, else base row
+            var readOnly = base.readOnly;
+            for (var j = 0; j < sorted.length; j++) {
+                if (sorted[j].overrideReadOnly) { readOnly = sorted[j].readOnly; break; }
+            }
+
+            // dependentOnField — override_dependent_field flag: first matching row wins, else base row
+            var dependentOnField: string | null = base.dependentOnField || null;
+            for (var j = 0; j < sorted.length; j++) {
+                if (sorted[j].overrideDependentField) { dependentOnField = sorted[j].dependentOnField || null; break; }
+            }
+
+            // qualifier fields — resolved as a group from one authoritative row:
+            // override_reference_qualifier flag wins, else base row
+            var qualRow = base;
+            for (var j = 0; j < sorted.length; j++) {
+                if (sorted[j].overrideReferenceQualifier) { qualRow = sorted[j]; break; }
+            }
+            var qt = qualRow.useReferenceQualifier;
+            var useReferenceQualifier: string | null = (qt === 'simple' || qt === 'dynamic' || qt === 'advanced') ? qt : null;
+            var referenceQual: string | null = qualRow.referenceQual || null;
+            var dynamicRefQual: string | null = qualRow.dynamicRefQual || null;
+
+            // Record values — only populated when a real record was loaded.
+            var value = '';
+            var displayValue = '';
+            if (sysId && recordLoaded) {
+                value = gr.getValue(fName) || '';
+                displayValue = gr.getDisplayValue(fName) || value;
+            }
+
+            result[fName] = {
+                name: fName,
+                label: label,
+                mandatory: mandatory,
+                readOnly: readOnly,
+                maxLength: maxLength,
+                type: type,
+                isChoiceField: choiceValue > 0,
+                choices: choiceValue > 0 ? resolveChoices(fName) : [],
+                reference: reference || null,
+                useReferenceQualifier: reference ? useReferenceQualifier : null,
+                referenceQual: reference ? referenceQual : null,
+                dynamicRefQual: reference ? dynamicRefQual : null,
+                dependentOnField: dependentOnField,
+                value: value,
+                displayValue: displayValue,
+            };
         }
 
         response.setBody({ result: result });

@@ -125,15 +125,7 @@ export function process(request: any, response: any): void {
             var row = baseRows[fName];
 
             if (!row) {
-                response.setBody({ 
-                    error: 'Field not found in sys_dictionary: ' + fName,
-                    tableList: tableList,
-                    foundFields: Object.keys(baseRows),
-                    requestedFields: fields
-                });
-                return;
-            }
-            /*if (!row) {
+                gs.info('row not found! ' + fName);
                 result[fName] = {
                     name: fName, label: fName, mandatory: false, readOnly: false,
                     maxLength: 0, type: 'string', isChoiceField: false, choices: [],
@@ -141,7 +133,7 @@ export function process(request: any, response: any): void {
                     dynamicRefQual: null, dependentOnField: null, value: '', displayValue: '',
                 };
                 continue;
-            }*/
+            }
 
             // Choices: whole-table replacement from most-specific table that has entries.
             var choices: any[] = [];

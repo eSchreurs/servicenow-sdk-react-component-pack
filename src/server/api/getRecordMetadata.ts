@@ -1,14 +1,13 @@
-import { GlideRecord, GlideTableHierarchy } from '@servicenow/glide'
+import { GlideRecord, GlideTableHierarchy, gs } from '@servicenow/glide'
 
 // Scripted REST API handler — POST /api/x_326171_ssdk_pack/rhino/metadata
 // Returns metadata + current values for all requested fields on the given record.
 //
 // Metadata is resolved from sys_dictionary using the full table hierarchy so that
 // dictionary overrides (override_mandatory, override_read_only,
-// override_reference_qualifier) are applied correctly.
-// Qualifier config (use_reference_qualifier / reference_qual / dynamic_ref_qual)
-// is also read from sys_dictionary with override_reference_qualifier awareness.
+// override_reference_qualifier, override_dependent_field) are applied correctly.
 // Choice lists are resolved from sys_choice (whole-table replacement semantics).
+// Language is read from the active session via gs.getSession().getLanguage().
 //
 // Note: GlideElementDescriptor (getED()) is not available in scoped Scripted REST
 // API context, so all metadata is derived from direct sys_dictionary queries.
@@ -75,10 +74,11 @@ export function process(request: any, response: any): void {
                 dynamicRefQual: dictGR.getValue('dynamic_ref_qual') || '',
                 overrideReferenceQualifier: dictGR.getValue('override_reference_qualifier') === 'true',
                 dependentOnField: dictGR.getValue('dependent_on_field') || '',
+                overrideDependentField: dictGR.getValue('override_dependent_field') === 'true',
             });
         }
 
-        // Sort rows most-specific-first for a field.
+        // Sort rows most-specific-first based on position in the table hierarchy.
         function sortRows(rows: any[]): any[] {
             return rows.slice().sort(function(a: any, b: any) {
                 var ai = tableList.indexOf(a.tableName);
@@ -87,39 +87,8 @@ export function process(request: any, response: any): void {
             });
         }
 
-        // Walk most-specific-first; first row with the override flag set is authoritative.
-        // Fall back to the base (last) row when no row has the override flag.
-        function resolveBoolean(sorted: any[], valueField: string, overrideField: string): boolean {
-            for (var j = 0; j < sorted.length; j++) {
-                if (sorted[j][overrideField]) return sorted[j][valueField];
-            }
-            return sorted[sorted.length - 1][valueField];
-        }
-
-        function firstNonEmpty(sorted: any[], field: string): string {
-            for (var j = 0; j < sorted.length; j++) {
-                if (sorted[j][field]) return sorted[j][field];
-            }
-            return '';
-        }
-
-        function firstNonZero(sorted: any[], field: string): number {
-            for (var j = 0; j < sorted.length; j++) {
-                if (sorted[j][field]) return sorted[j][field];
-            }
-            return 0;
-        }
-
-        // Qualifier fields are a group — read all three from the same authoritative row.
-        function resolveQualifierRow(sorted: any[]): any {
-            for (var j = 0; j < sorted.length; j++) {
-                if (sorted[j].overrideReferenceQualifier) return sorted[j];
-            }
-            return sorted[sorted.length - 1];
-        }
-
-        // 4. Batch sys_choice query.
-        var language: string = 'en';
+        // 4. Batch sys_choice query — language from the active session.
+        var language: string = gs.getSession().getLanguage().toString() || 'en';
         var choiceRows: Record<string, any[]> = {};
 
         var choiceGR = new GlideRecord('sys_choice');
@@ -166,53 +135,105 @@ export function process(request: any, response: any): void {
         for (var f = 0; f < fields.length; f++) {
             var fName = fields[f];
             var rows = fieldRows[fName];
-            if (!rows || rows.length === 0) continue;
+
+            // Field not found in dictionary — include with safe defaults rather than skipping.
+            if (!rows || rows.length === 0) {
+                result[fName] = {
+                    name: fName, label: fName, mandatory: false, readOnly: false,
+                    maxLength: 0, type: 'string', isChoiceField: false, choices: [],
+                    reference: null, useReferenceQualifier: null, referenceQual: null,
+                    dynamicRefQual: null, dependentOnField: null, value: '', displayValue: '',
+                };
+                continue;
+            }
 
             var sorted = sortRows(rows);
-            var label: string = firstNonEmpty(sorted, 'columnLabel') || fName;
-            var type: string = firstNonEmpty(sorted, 'internalType') || 'string';
-            var reference: string = firstNonEmpty(sorted, 'reference');
-            var maxLength: number = firstNonZero(sorted, 'maxLength');
-            var isChoiceField: boolean = firstNonZero(sorted, 'choice') > 0;
-            var mandatory: boolean = resolveBoolean(sorted, 'mandatory', 'overrideMandatory');
-            var readOnly: boolean = resolveBoolean(sorted, 'readOnly', 'overrideReadOnly');
-            var dependentOnField: string = firstNonEmpty(sorted, 'dependentOnField');
+            var base = sorted[sorted.length - 1];
 
-            var value: string = '';
-            var displayValue: string = '';
+            // label — no override flag: first non-empty, most-specific-first
+            var label = fName;
+            for (var j = 0; j < sorted.length; j++) {
+                if (sorted[j].columnLabel) { label = sorted[j].columnLabel; break; }
+            }
+
+            // type — no override flag: first non-empty, most-specific-first
+            var type = 'string';
+            for (var j = 0; j < sorted.length; j++) {
+                if (sorted[j].internalType) { type = sorted[j].internalType; break; }
+            }
+
+            // reference — no override flag: first non-empty, most-specific-first
+            var reference = '';
+            for (var j = 0; j < sorted.length; j++) {
+                if (sorted[j].reference) { reference = sorted[j].reference; break; }
+            }
+
+            // maxLength — no override flag: first non-zero, most-specific-first
+            var maxLength = 0;
+            for (var j = 0; j < sorted.length; j++) {
+                if (sorted[j].maxLength) { maxLength = sorted[j].maxLength; break; }
+            }
+
+            // choice — no override flag: first non-zero, most-specific-first
+            var choiceValue = 0;
+            for (var j = 0; j < sorted.length; j++) {
+                if (sorted[j].choice) { choiceValue = sorted[j].choice; break; }
+            }
+
+            // mandatory — override_mandatory flag: first matching row wins, else base row
+            var mandatory = base.mandatory;
+            for (var j = 0; j < sorted.length; j++) {
+                if (sorted[j].overrideMandatory) { mandatory = sorted[j].mandatory; break; }
+            }
+
+            // readOnly — override_read_only flag: first matching row wins, else base row
+            var readOnly = base.readOnly;
+            for (var j = 0; j < sorted.length; j++) {
+                if (sorted[j].overrideReadOnly) { readOnly = sorted[j].readOnly; break; }
+            }
+
+            // dependentOnField — override_dependent_field flag: first matching row wins, else base row
+            var dependentOnField: string | null = base.dependentOnField || null;
+            for (var j = 0; j < sorted.length; j++) {
+                if (sorted[j].overrideDependentField) { dependentOnField = sorted[j].dependentOnField || null; break; }
+            }
+
+            // qualifier fields — resolved as a group from one authoritative row:
+            // override_reference_qualifier flag wins, else base row
+            var qualRow = base;
+            for (var j = 0; j < sorted.length; j++) {
+                if (sorted[j].overrideReferenceQualifier) { qualRow = sorted[j]; break; }
+            }
+            var qt = qualRow.useReferenceQualifier;
+            var useReferenceQualifier: string | null = (qt === 'simple' || qt === 'dynamic' || qt === 'advanced') ? qt : null;
+            var referenceQual: string | null = qualRow.referenceQual || null;
+            var dynamicRefQual: string | null = qualRow.dynamicRefQual || null;
+
+            // Record values — only populated when a real record was loaded.
+            var value = '';
+            var displayValue = '';
             if (sysId && recordLoaded) {
                 value = gr.getValue(fName) || '';
                 displayValue = gr.getDisplayValue(fName) || value;
             }
 
-            var fieldData: any = {
+            result[fName] = {
                 name: fName,
                 label: label,
                 mandatory: mandatory,
                 readOnly: readOnly,
                 maxLength: maxLength,
                 type: type,
-                isChoiceField: isChoiceField,
-                choices: isChoiceField ? resolveChoices(fName) : [],
+                isChoiceField: choiceValue > 0,
+                choices: choiceValue > 0 ? resolveChoices(fName) : [],
+                reference: reference || null,
+                useReferenceQualifier: reference ? useReferenceQualifier : null,
+                referenceQual: reference ? referenceQual : null,
+                dynamicRefQual: reference ? dynamicRefQual : null,
+                dependentOnField: dependentOnField,
                 value: value,
                 displayValue: displayValue,
             };
-
-            if (reference) fieldData.reference = reference;
-
-            if (reference) {
-                var qr = resolveQualifierRow(sorted);
-                var qt: string = qr.useReferenceQualifier;
-                if (qt === 'simple' || qt === 'dynamic' || qt === 'advanced') {
-                    fieldData.useReferenceQualifier = qt;
-                }
-                if (qr.referenceQual) fieldData.referenceQual = qr.referenceQual;
-                if (qr.dynamicRefQual) fieldData.dynamicRefQual = qr.dynamicRefQual;
-            }
-
-            if (dependentOnField) fieldData.dependentOnField = dependentOnField;
-
-            result[fName] = fieldData;
         }
 
         response.setBody({ result: result });

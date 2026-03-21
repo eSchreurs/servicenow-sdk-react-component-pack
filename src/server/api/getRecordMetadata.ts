@@ -53,7 +53,6 @@ export function process(request: any, response: any): void {
                     readOnly: dictGR.getValue('read_only') === '1',
                     choice: parseInt(dictGR.getValue('choice') || '0', 10),
                     reference: dictGR.getValue('reference') || '',
-                    useReferenceQualifier: dictGR.getValue('use_reference_qualifier') || '',
                     referenceQual: dictGR.getValue('reference_qual') || '',
                     referenceQualCondition: dictGR.getValue('reference_qual_condition') || '',
                     dynamicRefQual: dictGR.getValue('dynamic_ref_qual') || '',
@@ -76,7 +75,6 @@ export function process(request: any, response: any): void {
             if (overrideGR.getValue('mandatory_override') === '1') row.mandatory = overrideGR.getValue('mandatory') === '1';
             if (overrideGR.getValue('read_only_override') === '1') row.readOnly = overrideGR.getValue('read_only') === '1';
             if (overrideGR.getValue('reference_qual_override') === '1') {
-                row.useReferenceQualifier = overrideGR.getValue('reference_qual_override') || '';
                 row.referenceQual = overrideGR.getValue('reference_qual') || '';
             }
             if (overrideGR.getValue('dependent_override') === '1') row.dependentOnField = overrideGR.getValue('dependent_on_field') || '';
@@ -129,7 +127,7 @@ export function process(request: any, response: any): void {
                 result[fName] = {
                     name: fName, label: fName, mandatory: false, readOnly: false,
                     maxLength: 0, type: 'string', isChoiceField: false, choices: [],
-                    reference: null, useReferenceQualifier: null, referenceQual: null,
+                    reference: null, referenceQual: null,
                     dynamicRefQual: null, dependentOnField: null, value: '', displayValue: '',
                 };
                 continue;
@@ -159,8 +157,6 @@ export function process(request: any, response: any): void {
                 displayValue = gr.getDisplayValue(fName) || value;
             }
 
-            var qt = row.useReferenceQualifier;
-            gs.info('qt: ' + qt + ' ' + fName);
             result[fName] = {
                 name: fName,
                 label: row.label || fName,
@@ -171,7 +167,6 @@ export function process(request: any, response: any): void {
                 isChoiceField: row.choice > 0,
                 choices: choices,
                 reference: row.reference || null,
-                useReferenceQualifier: row.reference ? ((qt === 'simple' || qt === 'dynamic' || qt === 'advanced') ? qt : null) : null,
                 referenceQual: row.reference ? (row.referenceQual || null) : null,
                 dynamicRefQual: row.reference ? (row.dynamicRefQual || null) : null,
                 dependentOnField: row.dependentOnField || null,

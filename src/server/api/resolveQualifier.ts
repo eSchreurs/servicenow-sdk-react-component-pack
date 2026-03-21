@@ -44,15 +44,13 @@ export function process(request: any, response: any): void {
         dictGR.addQuery('element', field);
         dictGR.query();
 
-        // Collect all rows, then select the authoritative one.
         var rows: any[] = [];
         while (dictGR.next()) {
             rows.push({
                 tableName: dictGR.getValue('name') || '',
-                useReferenceQualifier: dictGR.getValue('use_reference_qualifier') || '',
                 referenceQual: dictGR.getValue('reference_qual') || '',
                 dynamicRefQual: dictGR.getValue('dynamic_ref_qual') || '',
-                overrideReferenceQualifier: dictGR.getValue('override_reference_qualifier') || '',
+                overrideReferenceQualifier: parseBool(dictGR.getValue('override_reference_qualifier')),
                 sysId: dictGR.getValue('sys_id') || '',
             });
         }
@@ -69,47 +67,50 @@ export function process(request: any, response: any): void {
             return (ai === -1 ? Infinity : ai) - (bi === -1 ? Infinity : bi);
         });
 
-        // Select authoritative row: first with override_reference_qualifier, else base (last).
+        // Select authoritative row: first with override flag set, else base (last).
         var authRow: any = rows[rows.length - 1];
         for (var j = 0; j < rows.length; j++) {
-            if (rows[j].overrideReferenceQualifier === 'true') {
+            if (rows[j].overrideReferenceQualifier) {
                 authRow = rows[j];
                 break;
             }
         }
 
-        var qualType: string = authRow.useReferenceQualifier;
-
-        if (qualType !== 'advanced' && qualType !== 'dynamic') {
-            // 'simple' qualifier — plain encoded query string, no evaluation needed.
-            response.setBody({ result: authRow.referenceQual || '' });
-            return;
-        }
-
-        // 4. Evaluate via GlideScopedEvaluator.
-        //    evaluateScript() needs a live GlideRecord cursor pointing at the row —
-        //    re-query sys_dictionary by sys_id to get the live cursor.
+        // 4. Resolve qualifier — no type detection needed.
+        //    dynamicRefQual present → evaluate dynamic filter option via GlideScopedEvaluator
+        //    referenceQual starts with 'javascript:' → evaluate via GlideScopedEvaluator
+        //    anything else → plain encoded query, return as-is
         var evaluator = new GlideScopedEvaluator();
         evaluator.putVariable('current', gr);
 
-        var qualifier = '';
-
-        if (qualType === 'advanced') {
-            var advGR = new GlideRecord('sys_dictionary');
-            if (advGR.get('sys_id', authRow.sysId)) {
-                qualifier = evaluator.evaluateScript(advGR, 'reference_qual') || '';
-            }
-        } else {
-            // dynamic
+        if (authRow.dynamicRefQual) {
             var dynGR = new GlideRecord('sys_filter_option_dynamic');
             if (dynGR.get('sys_id', authRow.dynamicRefQual)) {
-                qualifier = evaluator.evaluateScript(dynGR, 'filter_script') || '';
+                response.setBody({ result: evaluator.evaluateScript(dynGR, 'filter_script') || '' });
+            } else {
+                response.setBody({ result: '' });
             }
+            return;
         }
 
-        response.setBody({ result: qualifier });
+        if (authRow.referenceQual.indexOf('javascript:') === 0) {
+            var advGR = new GlideRecord('sys_dictionary');
+            if (advGR.get('sys_id', authRow.sysId)) {
+                response.setBody({ result: evaluator.evaluateScript(advGR, 'reference_qual') || '' });
+            } else {
+                response.setBody({ result: '' });
+            }
+            return;
+        }
+
+        // Plain encoded query — return directly.
+        response.setBody({ result: authRow.referenceQual || '' });
 
     } catch (e) {
         response.setBody({ result: '' });
     }
+}
+
+function parseBool(val: string): boolean {
+    return val === 'true' || val === '1';
 }

@@ -17,6 +17,8 @@ RestApi({
             method: 'POST',
             path: '/metadata',
             script: getRecordMetadata,
+            consumes: 'application/json',
+            produces: 'application/json,application/xml,text/xml',
         }
     ]
-});
+})

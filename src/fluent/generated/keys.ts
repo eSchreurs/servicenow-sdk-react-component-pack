@@ -5,6 +5,11 @@ declare global {
         namespace Internal {
             interface Keys extends KeysRegistry {
                 explicit: {
+                    '84aaef21833fbe107b1bc730ceaad3bb': {
+                        table: 'sys_script_include'
+                        id: '84aaef21833fbe107b1bc730ceaad3bb'
+                        deleted: true
+                    }
                     bom_json: {
                         table: 'sys_module'
                         id: '2406007b4e7b45b4947e4b885e67e34b'
@@ -12,6 +17,7 @@ declare global {
                     'component-pack-page': {
                         table: 'sys_ui_page'
                         id: '524673e33cf74c68bf55aece9c01fb47'
+                        deleted: true
                     }
                     package_json: {
                         table: 'sys_module'
@@ -42,28 +48,32 @@ declare global {
                     'x_326171_ssdk_pack/client-B2TJQUtA': {
                         table: 'sys_ux_lib_asset'
                         id: 'b4062241e57b4c09ba20e60b5f1c7009'
+                        deleted: true
                     }
                     'x_326171_ssdk_pack/client-B2TJQUtA.js.map': {
                         table: 'sys_ux_lib_asset'
                         id: '601cd458fe154121aa3a22b7149c5452'
+                        deleted: true
                     }
                     'x_326171_ssdk_pack/component-explorer/main': {
                         table: 'sys_ux_lib_asset'
                         id: 'def156c121414e8ab179e831edf778cc'
+                        deleted: true
                     }
                     'x_326171_ssdk_pack/component-explorer/main.js.map': {
                         table: 'sys_ux_lib_asset'
                         id: '320d423e6f574b26a0c5b7bfeeab968a'
+                        deleted: true
                     }
                     'x_326171_ssdk_pack/main': {
                         table: 'sys_ux_lib_asset'
                         id: '9cc011c2057543328cd740d9dda24c85'
-                        deleted: false
+                        deleted: true
                     }
                     'x_326171_ssdk_pack/main.js.map': {
                         table: 'sys_ux_lib_asset'
                         id: '3f214000d9bb4aa48898b427bc2e58f6'
-                        deleted: false
+                        deleted: true
                     }
                 }
                 composite: [
@@ -78,7 +88,7 @@ declare global {
                     {
                         table: 'sys_ux_lib_asset'
                         id: '274859a0963345149de882665a0e762f'
-                        deleted: true
+                        deleted: false
                         key: {
                             name: 'x_326171_ssdk_pack/component-explorer/main.js.map'
                         }
@@ -86,7 +96,7 @@ declare global {
                     {
                         table: 'sys_ux_lib_asset'
                         id: '65fd5f53d3c0490b82bf9aaf12dda8e8'
-                        deleted: true
+                        deleted: false
                         key: {
                             name: 'x_326171_ssdk_pack/client'
                         }
@@ -94,7 +104,7 @@ declare global {
                     {
                         table: 'sys_ux_lib_asset'
                         id: '664a5f8554964a7db12e2e1d4958b357'
-                        deleted: true
+                        deleted: false
                         key: {
                             name: 'x_326171_ssdk_pack/client.js.map'
                         }
@@ -110,7 +120,7 @@ declare global {
                     {
                         table: 'sys_ux_lib_asset'
                         id: '7e20b61eb51340ad8f4b934cca3eb445'
-                        deleted: true
+                        deleted: false
                         key: {
                             name: 'x_326171_ssdk_pack/main.js.map'
                         }
@@ -126,7 +136,7 @@ declare global {
                     {
                         table: 'sys_ux_lib_asset'
                         id: 'a85f76957ce842d29f09efc9e5df824f'
-                        deleted: true
+                        deleted: false
                         key: {
                             name: 'x_326171_ssdk_pack/component-explorer/main'
                         }
@@ -134,7 +144,7 @@ declare global {
                     {
                         table: 'sys_ui_page'
                         id: 'a8b5c8ceb5d0417eb17ef7fdcfc6057f'
-                        deleted: true
+                        deleted: false
                         key: {
                             endpoint: 'x_326171_ssdk_pack_component_pack.do'
                         }
@@ -142,7 +152,7 @@ declare global {
                     {
                         table: 'sys_ux_lib_asset'
                         id: 'bdac45c618174f5aa7b4f7aae2950132'
-                        deleted: true
+                        deleted: false
                         key: {
                             name: 'x_326171_ssdk_pack/main'
                         }

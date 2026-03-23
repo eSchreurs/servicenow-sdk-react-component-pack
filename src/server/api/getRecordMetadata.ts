@@ -1,16 +1,9 @@
-import { GlideRecord, GlideTableHierarchy, gs } from '@servicenow/glide'
-
-// Scripted REST API handler — POST /api/x_326171_ssdk_pack/rhino/metadata
-// Returns metadata + current values for all requested fields on the given record.
-//
-// Returns { result: { [field]: FieldData } } or { result: null, error: string }.
-// Requires authentication. Scoped to x_326171_ssdk_pack.
+import { GlideRecord, GlideTableHierarchy } from '@servicenow/glide'
 
 export function process(request: any, response: any): void {
     try {
         var body = request.body.data;
         var table: string = body.table;
-        var sysId: string = body.sysId;
         var fields: string[] = body.fields;
         var language: string = body.language || 'en';
 
@@ -30,8 +23,11 @@ export function process(request: any, response: any): void {
             tableList.reverse();
         }
 
+        function parseBool(val: string): boolean {
+            return val === 'true' || val === '1';
+        }
+
         // Step 1 — Base field definitions from sys_dictionary.
-        // One row per field: the row from the most-specific table (earliest index in tableList).
         var dictGR = new GlideRecord('sys_dictionary');
         dictGR.addQuery('name', 'IN', tableList.join(','));
         dictGR.addQuery('element', 'IN', fields.join(','));
@@ -44,25 +40,34 @@ export function process(request: any, response: any): void {
             var tn: string = dictGR.getValue('name') || '';
             var existing = baseRows[fn];
             if (!existing || tableList.indexOf(tn) < tableList.indexOf(existing.tableName)) {
+
+                var useRefQual = dictGR.getValue('use_reference_qualifier') || '';
+                var referenceQual = '';
+                if (useRefQual === 'simple') {
+                    referenceQual = dictGR.getValue('reference_qual_condition') || '';
+                } else if (useRefQual === 'dynamic') {
+                    var dynSysId = dictGR.getValue('dynamic_ref_qual') || '';
+                    referenceQual = dynSysId ? fn + 'DYNAMIC' + dynSysId : '';
+                } else if (useRefQual === 'advanced') {
+                    referenceQual = dictGR.getValue('reference_qual') || '';
+                }
+
                 baseRows[fn] = {
                     tableName: tn,
                     label: dictGR.getValue('column_label') || '',
                     type: dictGR.getValue('internal_type') || 'string',
                     maxLength: parseInt(dictGR.getValue('max_length') || '0', 10),
-                    mandatory: dictGR.getValue('mandatory') === '1',
-                    readOnly: dictGR.getValue('read_only') === '1',
+                    mandatory: parseBool(dictGR.getValue('mandatory')),
+                    readOnly: parseBool(dictGR.getValue('read_only')),
                     choice: parseInt(dictGR.getValue('choice') || '0', 10),
                     reference: dictGR.getValue('reference') || '',
-                    referenceQual: dictGR.getValue('reference_qual') || '',
-                    referenceQualCondition: dictGR.getValue('reference_qual_condition') || '',
-                    dynamicRefQual: dictGR.getValue('dynamic_ref_qual') || '',
+                    referenceQual: referenceQual,
                     dependentOnField: dictGR.getValue('dependent_on_field') || '',
                 };
             }
         }
 
-        // Step 2 — Apply dictionary overrides from sys_dictionary_override.
-        // Patch the base row in place for each active override flag.
+        // Step 2 — Apply dictionary overrides.
         var overrideGR = new GlideRecord('sys_dictionary_override');
         overrideGR.addQuery('name', 'IN', tableList.join(','));
         overrideGR.addQuery('element', 'IN', fields.join(','));
@@ -72,20 +77,26 @@ export function process(request: any, response: any): void {
             var ofn: string = overrideGR.getValue('element') || '';
             if (!ofn || !baseRows[ofn]) continue;
             var row = baseRows[ofn];
-            if (overrideGR.getValue('mandatory_override') === '1') row.mandatory = overrideGR.getValue('mandatory') === '1';
-            if (overrideGR.getValue('read_only_override') === '1') row.readOnly = overrideGR.getValue('read_only') === '1';
-            if (overrideGR.getValue('reference_qual_override') === '1') {
+            if (parseBool(overrideGR.getValue('mandatory_override'))) {
+                row.mandatory = parseBool(overrideGR.getValue('mandatory'));
+            }
+            if (parseBool(overrideGR.getValue('read_only_override'))) {
+                row.readOnly = parseBool(overrideGR.getValue('read_only'));
+            }
+            if (parseBool(overrideGR.getValue('reference_qual_override'))) {
                 row.referenceQual = overrideGR.getValue('reference_qual') || '';
             }
-            if (overrideGR.getValue('dependent_override') === '1') row.dependentOnField = overrideGR.getValue('dependent_on_field') || '';
+            if (parseBool(overrideGR.getValue('dependent_override'))) {
+                row.dependentOnField = overrideGR.getValue('dependent_on_field') || '';
+            }
         }
 
-        // Step 3 — Choices from sys_choice.
-        // Only query for fields that are choice fields. Whole-table replacement: use entries
-        // from the most-specific table in the hierarchy that has any entries for the field.
+        // Step 3 — Choices from sys_choice (choice fields only).
         var choiceFields: string[] = [];
         for (var f = 0; f < fields.length; f++) {
-            if (baseRows[fields[f]] && baseRows[fields[f]].choice > 0) choiceFields.push(fields[f]);
+            if (baseRows[fields[f]] && baseRows[fields[f]].choice > 0) {
+                choiceFields.push(fields[f]);
+            }
         }
 
         var choiceRows: Record<string, any[]> = {};
@@ -111,10 +122,6 @@ export function process(request: any, response: any): void {
             }
         }
 
-        // Step 4 — Record values.
-        var gr = new GlideRecord(table);
-        var recordLoaded = sysId ? gr.get('sys_id', sysId) : false;
-
         // Build result.
         var result: Record<string, any> = {};
 
@@ -123,21 +130,20 @@ export function process(request: any, response: any): void {
             var row = baseRows[fName];
 
             if (!row) {
-                gs.info('row not found! ' + fName);
                 result[fName] = {
                     name: fName, label: fName, mandatory: false, readOnly: false,
                     maxLength: 0, type: 'string', isChoiceField: false, choices: [],
-                    reference: null, referenceQual: null,
-                    dynamicRefQual: null, dependentOnField: null, value: '', displayValue: '',
+                    reference: null, referenceQual: null, dependentOnField: null,
                 };
                 continue;
             }
 
-            // Choices: whole-table replacement from most-specific table that has entries.
             var choices: any[] = [];
             if (row.choice > 0 && choiceRows[fName]) {
                 for (var t = 0; t < tableList.length; t++) {
-                    var tableChoices = choiceRows[fName].filter(function(c: any) { return c.tableName === tableList[t]; });
+                    var tableChoices = choiceRows[fName].filter(
+                        function(c: any) { return c.tableName === tableList[t]; }
+                    );
                     if (tableChoices.length > 0) {
                         tableChoices.sort(function(a: any, b: any) { return a.sequence - b.sequence; });
                         choices = tableChoices.map(function(c: any) {
@@ -150,13 +156,6 @@ export function process(request: any, response: any): void {
                 }
             }
 
-            var value = '';
-            var displayValue = '';
-            if (recordLoaded) {
-                value = gr.getValue(fName) || '';
-                displayValue = gr.getDisplayValue(fName) || value;
-            }
-
             result[fName] = {
                 name: fName,
                 label: row.label || fName,
@@ -167,11 +166,8 @@ export function process(request: any, response: any): void {
                 isChoiceField: row.choice > 0,
                 choices: choices,
                 reference: row.reference || null,
-                referenceQual: row.reference ? (row.referenceQual || null) : null,
-                dynamicRefQual: row.reference ? (row.dynamicRefQual || null) : null,
+                referenceQual: row.referenceQual || null,
                 dependentOnField: row.dependentOnField || null,
-                value: value,
-                displayValue: displayValue,
             };
         }
 

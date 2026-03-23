@@ -1,17 +1,17 @@
 import { GlideRecord, GlideTableHierarchy } from '@servicenow/glide'
-
+ 
 export function process(request: any, response: any): void {
     try {
         var body = request.body.data;
         var table: string = body.table;
         var fields: string[] = body.fields;
         var language: string = body.language || 'en';
-
+ 
         if (!table || !fields || fields.length === 0) {
             response.setBody({ result: null, error: 'table and fields are required' });
             return;
         }
-
+ 
         // Build table hierarchy most-specific-first.
         var hierarchy = new GlideTableHierarchy(table);
         var tables = hierarchy.getTables();
@@ -22,17 +22,17 @@ export function process(request: any, response: any): void {
         if (tableList.length > 0 && tableList[0] !== table) {
             tableList.reverse();
         }
-
+ 
         function parseBool(val: string): boolean {
             return val === 'true' || val === '1';
         }
-
+ 
         // Step 1 — Base field definitions from sys_dictionary.
         var dictGR = new GlideRecord('sys_dictionary');
         dictGR.addQuery('name', 'IN', tableList.join(','));
         dictGR.addQuery('element', 'IN', fields.join(','));
         dictGR.query();
-
+ 
         var baseRows: Record<string, any> = {};
         while (dictGR.next()) {
             var fn: string = dictGR.getValue('element') || '';
@@ -40,7 +40,7 @@ export function process(request: any, response: any): void {
             var tn: string = dictGR.getValue('name') || '';
             var existing = baseRows[fn];
             if (!existing || tableList.indexOf(tn) < tableList.indexOf(existing.tableName)) {
-
+ 
                 var useRefQual = dictGR.getValue('use_reference_qualifier') || '';
                 var referenceQual = '';
                 if (useRefQual === 'simple') {
@@ -51,7 +51,7 @@ export function process(request: any, response: any): void {
                 } else if (useRefQual === 'advanced') {
                     referenceQual = dictGR.getValue('reference_qual') || '';
                 }
-
+ 
                 baseRows[fn] = {
                     tableName: tn,
                     label: dictGR.getValue('column_label') || '',
@@ -66,13 +66,13 @@ export function process(request: any, response: any): void {
                 };
             }
         }
-
+ 
         // Step 2 — Apply dictionary overrides.
         var overrideGR = new GlideRecord('sys_dictionary_override');
         overrideGR.addQuery('name', 'IN', tableList.join(','));
         overrideGR.addQuery('element', 'IN', fields.join(','));
         overrideGR.query();
-
+ 
         while (overrideGR.next()) {
             var ofn: string = overrideGR.getValue('element') || '';
             if (!ofn || !baseRows[ofn]) continue;
@@ -90,7 +90,7 @@ export function process(request: any, response: any): void {
                 row.dependentOnField = overrideGR.getValue('dependent_on_field') || '';
             }
         }
-
+ 
         // Step 3 — Choices from sys_choice (choice fields only).
         var choiceFields: string[] = [];
         for (var f = 0; f < fields.length; f++) {
@@ -98,7 +98,7 @@ export function process(request: any, response: any): void {
                 choiceFields.push(fields[f]);
             }
         }
-
+ 
         var choiceRows: Record<string, any[]> = {};
         if (choiceFields.length > 0) {
             var choiceGR = new GlideRecord('sys_choice');
@@ -106,7 +106,7 @@ export function process(request: any, response: any): void {
             choiceGR.addQuery('element', 'IN', choiceFields.join(','));
             choiceGR.addQuery('language', language);
             choiceGR.query();
-
+ 
             while (choiceGR.next()) {
                 var cfn: string = choiceGR.getValue('element') || '';
                 var cfTable: string = choiceGR.getValue('name') || '';
@@ -121,23 +121,31 @@ export function process(request: any, response: any): void {
                 });
             }
         }
-
+ 
         // Build result.
         var result: Record<string, any> = {};
-
+ 
         for (var f = 0; f < fields.length; f++) {
             var fName = fields[f];
             var row = baseRows[fName];
-
+ 
             if (!row) {
                 result[fName] = {
-                    name: fName, label: fName, mandatory: false, readOnly: false,
-                    maxLength: 0, type: 'string', isChoiceField: false, choices: [],
-                    reference: null, referenceQual: null, dependentOnField: null,
+                    name: fName,
+                    label: fName,
+                    mandatory: false,
+                    readOnly: false,
+                    maxLength: 0,
+                    type: 'string',
+                    isChoiceField: false,
+                    choices: [],
+                    reference: null,
+                    referenceQual: null,
+                    dependentOnField: null,
                 };
                 continue;
             }
-
+ 
             var choices: any[] = [];
             if (row.choice > 0 && choiceRows[fName]) {
                 for (var t = 0; t < tableList.length; t++) {
@@ -155,7 +163,7 @@ export function process(request: any, response: any): void {
                     }
                 }
             }
-
+ 
             result[fName] = {
                 name: fName,
                 label: row.label || fName,
@@ -170,9 +178,9 @@ export function process(request: any, response: any): void {
                 dependentOnField: row.dependentOnField || null,
             };
         }
-
+ 
         response.setBody({ result: result });
-
+ 
     } catch (e) {
         response.setBody({ result: null, error: String(e) });
     }

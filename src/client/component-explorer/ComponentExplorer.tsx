@@ -31,6 +31,7 @@ import { DateTimeFieldPage } from './pages/molecules/DateTimeFieldPage';
 import { ChoiceFieldPage } from './pages/molecules/ChoiceFieldPage';
 import { ReferenceFieldPage } from './pages/molecules/ReferenceFieldPage';
 import { SearchBarPage } from './pages/molecules/SearchBarPage';
+// All field molecule pages above now use the unified Field component internally
 
 // ---------------------------------------------------------------------------
 // Nav structure — add new pages here as phases are completed

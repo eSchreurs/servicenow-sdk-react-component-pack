@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTheme } from '../../../npm-package/context/ThemeContext';
-import { NumberField } from '../../../npm-package/components/molecules/NumberField';
+import { Field } from '../../../npm-package/components/molecules/Field';
 import { Text } from '../../../npm-package/components/atoms/Text';
 import { PropTable } from '../../components/PropTable';
 import { CodeSnippet } from '../../components/CodeSnippet';
@@ -19,49 +19,49 @@ export function NumberFieldPage(): React.ReactElement {
 
   return (
     <PageLayout
-      title="NumberField"
-      description="Field molecule for integer, decimal, float, and currency types. Renders a number input. Both value and displayValue are the numeric string — onChange is called with the same string for both."
+      title="Field — numeric types"
+      description="Field molecule rendering a number input for integer, decimal, float, and currency types. Both value and displayValue are the numeric string — onChange is called with the same string for both."
       sections={[
         {
           title: 'Preview',
           children: (
             <div style={colStyle}>
               <Text variant="label">States</Text>
-              <NumberField
+              <Field
+                type="integer"
                 name="num-normal"
                 label="Impact"
                 value="2"
-                displayValue="2"
                 mandatory={false}
                 readOnly={false}
                 hasError={false}
                 onChange={() => undefined}
               />
-              <NumberField
+              <Field
+                type="integer"
                 name="num-mandatory"
                 label="Impact"
                 value=""
-                displayValue=""
                 mandatory={true}
                 readOnly={false}
                 hasError={false}
                 onChange={() => undefined}
               />
-              <NumberField
+              <Field
+                type="integer"
                 name="num-error"
                 label="Impact"
                 value=""
-                displayValue=""
                 mandatory={true}
                 readOnly={false}
                 hasError={true}
                 onChange={() => undefined}
               />
-              <NumberField
+              <Field
+                type="integer"
                 name="num-readonly"
                 label="Impact"
                 value="2"
-                displayValue="2"
                 mandatory={false}
                 readOnly={true}
                 hasError={false}
@@ -69,11 +69,11 @@ export function NumberFieldPage(): React.ReactElement {
               />
 
               <Text variant="label" style={{ marginTop: theme.spacingMd }}>Interactive</Text>
-              <NumberField
+              <Field
+                type="integer"
                 name="num-live"
                 label="Impact"
                 value={liveValue}
-                displayValue={liveValue}
                 mandatory={false}
                 readOnly={false}
                 hasError={false}
@@ -88,10 +88,10 @@ export function NumberFieldPage(): React.ReactElement {
           children: (
             <PropTable
               props={[
+                { name: 'type', type: "string ('integer' | 'decimal' | 'float' | 'currency')", required: true, description: "Any numeric type resolves to a number input." },
                 { name: 'name', type: 'string', required: true, description: 'Field name — used as the input id and passed to onChange.' },
                 { name: 'label', type: 'string', required: true, description: 'Label text rendered above the input.' },
                 { name: 'value', type: 'string', required: true, description: 'Numeric value as a string (e.g. "3" or "1.5").' },
-                { name: 'displayValue', type: 'string', required: true, description: 'Equals value for numeric fields.' },
                 { name: 'mandatory', type: 'boolean', required: true, description: 'When true, renders a red asterisk next to the label.' },
                 { name: 'readOnly', type: 'boolean', required: true, description: 'When true, renders the value as plain text.' },
                 { name: 'hasError', type: 'boolean', required: true, description: 'When true, applies a red error outline.' },
@@ -107,15 +107,15 @@ export function NumberFieldPage(): React.ReactElement {
           title: 'Usage',
           children: (
             <CodeSnippet
-              code={`import { NumberField } from 'servicenow-sdk-react-component-pack';
+              code={`import { Field } from 'servicenow-sdk-react-component-pack';
 
 const [impact, setImpact] = useState('');
 
-<NumberField
+<Field
+  type="integer"
   name="impact"
   label="Impact"
   value={impact}
-  displayValue={impact}
   mandatory={true}
   readOnly={false}
   hasError={impact === ''}

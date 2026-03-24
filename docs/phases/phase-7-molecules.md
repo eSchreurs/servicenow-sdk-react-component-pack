@@ -5,7 +5,7 @@ Build all field molecules. Each molecule wraps one or more atoms into a complete
 
 ## Reference Documents
 - Form Component Spec (`docs/specs/form-component-spec.md`) — Sections 2, 7, 8
-- Service Layer Spec (`docs/specs/service-layer-spec.md`) — Sections 5, 6, 7
+- Service Layer Spec (`docs/specs/service-layer-spec.md`) — Sections 5, 6
 
 ---
 
@@ -105,45 +105,44 @@ interface ChoiceFieldProps extends BaseFieldProps {
 - `onChange`: calls parent with stored value and display label
 
 ## 7. ReferenceField
-The most complex molecule. Wraps `ReferenceInput` and `Popover`. Calls `RhinoService` and `SearchService`.
+The most complex molecule. Wraps `ReferenceInput` and `Popover`. Calls `SearchService` for typeahead search and `RecordService` for the info popover.
 
 ```typescript
 interface ReferenceFieldProps extends BaseFieldProps {
-  reference: string
-  qualifierType?: 'simple' | 'dynamic' | 'advanced'
-  simpleQualifier?: string
-  filter?: string
+  reference: string           // Referenced table name
+  referenceQual?: string      // Qualifier string from FieldData — passed as-is to SearchService
+  filter?: string             // Developer-supplied filter, ANDed with referenceQual
   searchFields?: string[]
   previewFields?: string[]
-  table: string
-  sysId: string
-  isDirty: boolean
+  table: string               // Parent form record table (for info popover label fetching)
+  sysId: string               // Parent form record sysId
 }
 ```
 
 ### Search orchestration
+
 ```
-User interacts (focus or typing)
-  → if dynamic/advanced AND isDirty:
-      call RhinoService.resolveQualifier(table, sysId, field)
-      cache result, isDirty = false
+User types (≥ 2 characters, debounced 300ms)
+  → build effective filter:
+      if referenceQual AND filter → '(referenceQual)^filter'
+      if referenceQual only       → referenceQual
+      if filter only              → filter
+      if neither                  → no filter
   → call SearchService.searchRecords(
-      reference, term, searchFields, 15,
-      qualifier + filter  ← ANDed, mutually exclusive (simple OR cached)
+        reference, term, searchFields, 15, effectiveFilter
     )
+  → abort in-flight requests when new search triggers
 ```
 
-- Search triggered at ≥ 2 characters, debounced 300ms
-- Abort in-flight requests when new search triggers
-- When `filter` or resolved qualifier changes: abort in-flight search, clear dropdown results
-- Selected value NOT auto-cleared when filter changes — developer's responsibility
+- All qualifier types (simple, dynamic, advanced) are passed as-is — the Table API evaluates them server-side
+- When `filter` changes: abort in-flight search, clear dropdown results. Selected value is NOT auto-cleared.
 
 ### Info popover
 - Opens on info icon click, anchored bottom-left to icon
-- Without `previewFields`: fetch all non-`sys_`-prefixed fields from referenced record, humanize labels
-- With `previewFields`: fetch only those fields using `MetadataService.getFieldLabels()`
+- Without `previewFields`: fetch the referenced record via `RecordService.getRecord()`, show all non-`sys_`-prefixed fields with a non-empty value, use field name humanized as label
+- With `previewFields`: fetch record via `RecordService.getRecord()`, fetch labels via `RhinoService.getRecordMetadata(reference, previewFields)`, show only declared fields in order
 - Always shows display values in popover
-- Uses `RecordService.getRecord()` for popover data
+- Uses `Popover` atom for rendering
 
 ### onChange
 - Calls parent with `sys_id` as `value` and display name as `displayValue`
@@ -172,6 +171,8 @@ interface SearchBarProps {
 - Do not build the `Form` organism yet — that is Phase 8
 - Do not duplicate service logic inside molecules — use the service layer
 - Do not call `ServiceNowClient` directly from any molecule
+- Do not call `RhinoService.resolveQualifier` — it does not exist
+- Do not implement a dirty flag strategy for qualifiers — `referenceQual` is static metadata
 
 ---
 
@@ -179,6 +180,7 @@ interface SearchBarProps {
 - All 8 molecules exist in `src/client/components/molecules/`
 - All compile without errors
 - All use `FieldWrapper` for label/error rendering
-- `ReferenceField` correctly orchestrates `RhinoService` → `SearchService`
+- `ReferenceField` passes `referenceQual` directly to `SearchService` for all qualifier types
+- `ReferenceField` info popover uses `RecordService.getRecord()` for values and `RhinoService.getRecordMetadata()` for labels when `previewFields` is specified
 - `ChoiceField` filters dependent choices using stored values only
 - `DateTimeField` converts formats correctly in both directions

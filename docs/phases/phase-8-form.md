@@ -19,12 +19,10 @@ The Form organism must use `useReducer` for all state management. All state tran
 
 ## Reducer Actions
 
-Define a `FormAction` type covering all state transitions:
-
 ```typescript
 type FormAction =
   | { type: 'LOAD_START' }
-  | { type: 'LOAD_SUCCESS'; record: ServiceNowRecord; metadata: FieldMetadata[]; choices: Record<string, ChoiceEntry[]> }
+  | { type: 'LOAD_SUCCESS'; metadata: Record<string, FieldData>; record: ServiceNowRecord }
   | { type: 'LOAD_ERROR'; error: Error }
   | { type: 'FIELD_CHANGED'; field: string; value: string; displayValue: string }
   | { type: 'SAVE_START' }
@@ -34,25 +32,29 @@ type FormAction =
   | { type: 'DISMISS_ERROR' }
 ```
 
+`LOAD_SUCCESS` carries both `metadata` (from `RhinoService.getRecordMetadata()`) and `record` (from `RecordService.getRecord()`). The reducer merges these into a single consistent form state.
+
 ---
 
 ## Data Loading
 
 On mount:
 1. Flatten all `FieldDefinition` entries from `columns`
-2. Group by unique `table` → call `MetadataService.getTableHierarchy()` per table
-3. Call `MetadataService.getFieldMetadata()` and `MetadataService.getChoices()` per hierarchy — pass `language` from `useServiceNow()`
-4. Group by `table + sysId` (non-empty) → call `RecordService.getRecord()` per unique record
-5. All fetches parallelised with `Promise.all` where possible
-6. Apply `defaultValue` for new records (`sysId = ''`) only if field has no loaded value
-7. Dispatch `LOAD_SUCCESS` or `LOAD_ERROR`
+2. Group by **unique table** → call `RhinoService.getRecordMetadata(table, fields)` once per unique table. This returns all field metadata and choices in one round-trip.
+3. Group by **unique `table + sysId`** (non-empty sysId) → call `RecordService.getRecord(table, sysId, fields)` once per unique record to fetch current values.
+4. All fetches parallelised with `Promise.all`
+5. Apply `defaultValue` for new records (`sysId = ''`) only if field has no loaded value
+6. Build initial `formRecord` — keyed by `table.field` — from loaded record data. Every declared field must be present; fields with no loaded value initialised as `{ value: '', displayValue: '' }`
+7. Dispatch `LOAD_SUCCESS` with merged metadata and record, or `LOAD_ERROR` on any failure
+
+Pass `language` from `useServiceNow()` to `RhinoService.getRecordMetadata()`.
 
 ---
 
 ## Field Rendering
 
 The Form resolves the correct molecule per field using this priority:
-1. Has choices OR `choice > 0` in metadata → `ChoiceField`
+1. `isChoiceField === true` in metadata → `ChoiceField`
 2. Switch on `type`:
    - `string` ≤ 255 → `StringField`
    - `string` > 255, `text`, `html`, `translated_text` → `TextAreaField`
@@ -81,9 +83,9 @@ Effective mandatory/readOnly = `databaseValue OR developerOverride`
 ## Field Change Handling
 
 On every field change (`FIELD_CHANGED`):
-- Update `record` and `displayValues` in state
-- Set `isDirty = true` on all `ReferenceField` instances
-- Re-filter dependent `ChoiceField` options (Form handles auto-clear of invalid dependent choices)
+- Update `formRecord` in state
+- Re-filter dependent `ChoiceField` options
+- Auto-clear invalid dependent choice values
 - Call `onFieldChange` prop AFTER state is updated
 
 ---
@@ -92,7 +94,7 @@ On every field change (`FIELD_CHANGED`):
 
 On save attempt only — never on field change:
 - Fields where effective `mandatory = true` AND `readOnly = false` AND `visible = true` must have non-empty value
-- Invisible fields are excluded from validation
+- Invisible fields excluded from validation
 - On failure: dispatch `VALIDATION_FAILED`, show summary above action buttons, apply red border to failing fields via `hasError` prop
 - Errors clear only on successful save or explicit dismiss
 
@@ -123,7 +125,7 @@ On save attempt only — never on field change:
 ## Invisible Fields
 
 - Not rendered
-- Still tracked in state and `isDirty` propagation
+- Still tracked in state and `formRecord`
 - Excluded from validation and save payload
 
 ---
@@ -138,7 +140,7 @@ On save attempt only — never on field change:
 
 ## Context Usage
 
-- Read `language` from `useServiceNow()` and pass to `MetadataService.getChoices()`
+- Read `language` from `useServiceNow()` and pass to `RhinoService.getRecordMetadata()`
 - `ReferenceField` instances read theme via `useTheme()` themselves — Form does not pass theme
 
 ---
@@ -147,14 +149,17 @@ On save attempt only — never on field change:
 - Do not use `useState` for form state — `useReducer` only
 - Do not include non-declared fields in save payload
 - Do not validate on field change — only on save attempt
-- Do not auto-clear `ReferenceField` value when filter changes — that is developer's responsibility
+- Do not call `MetadataService` — it does not exist; use `RhinoService.getRecordMetadata()`
+- Do not implement a dirty flag strategy for reference qualifiers — `referenceQual` is static and passed as-is to `SearchService`
 
 ---
 
 ## Done When
 - `Form.tsx` exists in `src/client/components/organisms/`
 - Uses `useReducer` with all defined action types
-- Correctly resolves field types and renders appropriate molecules
+- Data loading calls `RhinoService.getRecordMetadata()` once per unique table and `RecordService.getRecord()` once per unique `table+sysId`, parallelised
+- `LOAD_SUCCESS` correctly merges metadata and record into form state
+- Field type resolution uses `isChoiceField` boolean, then type switch
 - Override rules implemented correctly (database wins for restrictions)
 - Validation fires only on save, applies `hasError` to failing fields
 - Save groups by `table + sysId`, only saves declared fields

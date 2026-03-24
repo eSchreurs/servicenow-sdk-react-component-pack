@@ -7,7 +7,7 @@
 ## 1. Project Overview
 
 - **Project Name:** `servicenow-sdk-react-component-pack`
-- **Description:** A two-part developer toolkit consisting of (1) a ServiceNow scoped application that provides the server-side infrastructure, and (2) an NPM package of reusable React components for use in any ServiceNow SDK project. Developers install the scoped app once per instance, then import components via NPM in any SDK project.
+- **Description:** A ServiceNow scoped application that provides both server-side infrastructure and a React component library. The scoped app is installed on a ServiceNow instance via the SDK. Developers then import components from the npm-package directory within any SDK project.
 - **Purpose:** To accelerate pro-code app development on the ServiceNow platform by providing a consistent, configurable, and themeable set of React components that integrate natively with ServiceNow's data layer.
 - **Primary Language(s):** `TypeScript (TSX), JavaScript (ServiceNow server-side)`
 - **Project Type:** `Single ServiceNow SDK Application — contains both the companion app server-side infrastructure and the React component library`
@@ -17,16 +17,15 @@
 ## 2. Goals & Objectives
 
 ### Primary Goals
-- Provide a library of production-ready React components installable via NPM in any ServiceNow SDK project.
+- Provide a library of production-ready React components usable in any ServiceNow SDK project.
 - Enable developers to instantiate and configure components entirely through props, with no internal changes needed.
 - Integrate seamlessly with ServiceNow Table API and Scripted REST APIs for data retrieval and manipulation.
 - Expose a centralized theme file so styling is consistent and globally configurable across all components.
 
 ### Success Criteria
-- A developer can run `npm install servicenow-sdk-react-component-pack` and immediately import and use components.
+- A developer can import and use components directly from the npm-package source.
 - All components render correctly, retrieve data via ServiceNow APIs, and respect the active theme.
 - Components are individually documented with all available props listed.
-- [Any other success criteria to add?]
 
 ### Milestones & Build Order
 
@@ -34,35 +33,33 @@ The project must be built in the following sequence. The agent must never skip a
 
 | # | Phase | Deliverables |
 |---|-------|-------------|
-| 1 | **Project Scaffolding** | Monorepo structure, both `servicenow-app` and `npm-package` set up from the provided empty SDK repo, all config files in place |
-| 2 | **Theme File** | Centralized theme file with all styling variables defined (colors, fonts, sizes, spacing, borders, border-radius) |
-| 3 | **Atoms — Foundation** | `Icon`, `Text`, `Label`, `Spinner` — the simplest primitives with no dependencies on other atoms |
-| 4 | **Atoms — Inputs** | `TextInput`, `TextArea`, `Checkbox`, `SelectInput`, `ReferenceInput` — all input primitives, built on top of foundation atoms where applicable |
-| 5 | **Atoms — Feedback & Actions** | `Button`, `Badge`, `Tooltip`, `Popover` — interactive and informational atoms |
-| 6 | **Molecules** | In order: `FormField` → `ChoiceField` → `ReferenceField` → `SearchBar` |
-| 7 | **Organism: Form** | Full `Form` component, depending on all field molecules |
-| 8 | **Component Explorer** | Full documentation UI Page in the ServiceNow app, covering all components built so far |
+| 1 | **Project Scaffolding** | Folder structure, config files, and placeholders set up from the provided SDK repo |
+| 2 | **Theme & Context** | Centralized theme file, `ThemeContext`, `ServiceNowContext`, and all shared types |
+| 3 | **Service Layer** | All five services + companion app metadata endpoint |
+| 4 | **Foundation Atoms** | `FieldWrapper`, `Text`, `Label`, `Icon`, `Spinner` |
+| 5 | **Input Atoms** | `TextInput`, `TextArea`, `Checkbox`, `SelectInput`, `ReferenceInput` |
+| 6 | **Feedback & Action Atoms** | `Button`, `Badge`, `Tooltip`, `Popover` |
+| 7 | **Molecules** | All field molecules + `SearchBar` |
+| 8 | **Form Organism** | Full `Form` component |
+| 9 | **Component Explorer** | Living documentation UI Page |
 
 ---
 
 ## 3. Scope
 
 ### ✅ In Scope
-- React TSX components, each in its own file/class/object
-- A built-in **Component Explorer UI Page** (React app) deployed as part of the ServiceNow scoped app, serving as living documentation: showcasing all available components, their visual appearance, available props, and usage examples
-- NPM package setup and configuration (`package.json`, build tooling, exports)
+- React TSX components, each in its own file
+- A built-in **Component Explorer UI Page** (React app) deployed as part of the ServiceNow scoped app, serving as living documentation
 - ServiceNow Table API integration for data retrieval and updates
-- Scripted REST API integration, including a dedicated endpoint exposing ServiceNow's Rhino engine for server-side script evaluation (e.g. evaluating conditions that reference Script Includes)
-- Centralized theme file with configurable styling variables (colors, fonts, sizes, margins, borders, etc.)
-- Atomic design system: composite components built from primitive components (e.g. a Form uses InputField, Button, and Text components)
+- Scripted REST API for server-side metadata resolution (field definitions, choices, table hierarchy) and any other logic requiring Glide API access
+- Centralized theme file with configurable styling variables
+- Atomic design system: atoms → molecules → organisms
 - Style override support via props on every component
-- Display Value / actual value handling: UI always shows display values, underlying database values are retained internally
+- Display value / actual value handling: UI always shows display values, underlying database values retained internally
 
 ### ❌ Out of Scope
-- No direct use of Glide APIs in the browser (all server-side logic must go through Scripted REST APIs)
-- No custom ServiceNow platform UI (this is purely a React component library, not a ServiceNow scope/application)
+- No direct use of Glide APIs in the browser — all server-side logic goes through Scripted REST APIs
 - No exposure of passwords, tokens, or other security objects in the browser, API responses, URLs, or code
-- [Any other explicit exclusions?]
 
 ---
 
@@ -71,72 +68,69 @@ The project must be built in the following sequence. The agent must never skip a
 ### Stack
 | Layer | Technology |
 |-------|------------|
-| Repo Structure | `Single ServiceNow SDK app — no monorepo split` |
-| Components | `React (TSX)` |
-| Language | `TypeScript (NPM package), JavaScript (ServiceNow app)` |
-| Styling | `CSS/SCSS variables via centralized theme file` |
-| Data Layer | `ServiceNow Table API + Scripted REST APIs` |
-| Server-side Eval | `Scripted REST API → ServiceNow Rhino Engine` |
-| Package Distribution | `Deployed as a ServiceNow scoped app via the SDK` |
+| Repo Structure | Single ServiceNow SDK app — no monorepo split |
+| Components | React (TSX) |
+| Language | TypeScript (client), JavaScript (ServiceNow server-side) |
+| Styling | Inline styles via centralized theme object |
+| Data Layer | ServiceNow Table API + Scripted REST APIs |
+| Server-side Metadata | Scripted REST API → ServiceNow Glide APIs (GlideRecord, GlideTableHierarchy) |
 | SDK | `@servicenow/sdk 4.4.0` |
 | Glide Types | `@servicenow/glide 26.0.1` |
 | Build Tooling | `now-sdk build (@servicenow/isomorphic-rollup)` |
 | Linting | `eslint 8.50.0 + @servicenow/eslint-plugin-sdk-app-plugin` |
-| Target Environment | `ServiceNow SDK (IDE)` |
+| Target Environment | ServiceNow SDK (IDE) |
 
-### Architecture Notes
+### Repository Structure
 
-#### ServiceNow SDK `src/` Structure
-The ServiceNow SDK enforces a strict three-way split inside every `src/` directory. The agent must always respect this:
+The repository root IS the ServiceNow app. The ServiceNow IDE clones the repo and builds from the root. There is no monorepo split — everything lives in one SDK app.
 
-- **`src/client/`** — All browser-executed code: React components, services, theme, types. Bundled by `now-sdk` via `@servicenow/isomorphic-rollup`. No Glide API access here.
-- **`src/server/`** — All server-side scripts: Scripted REST API handlers, Script Includes. Has access to Glide APIs. TypeScript config lives here (`tsconfig.json`), as referenced by `now.config.json`.
-- **`src/fluent/`** — ServiceNow Fluent API definitions, if used.
+The component library (`npm-package`) content lives inside `src/client/npm-package/` within the ServiceNow app. This is client-side code that runs in the browser.
+
+### ServiceNow SDK `src/` Structure
+
+The ServiceNow SDK enforces a strict three-way split inside `src/`:
+
+- **`src/client/`** — All browser-executed code: React components, services, theme, types. Bundled by `now-sdk`. No Glide API access here.
+- **`src/server/`** — All server-side scripts: Scripted REST API handlers. Has access to Glide APIs.
+- **`src/fluent/`** — ServiceNow Fluent API definitions.
 
 Never place client-side code in `server/` or vice versa. The SDK build system enforces this boundary at compile time.
 
-#### Monorepo Structure
-A ServiceNow SDK project (as created by the ServiceNow IDE) has the following structure and conventions that the agent must be aware of:
+### Data Layer
 
-- **Build & deploy commands** are driven by `now-sdk`: `now-sdk build`, `now-sdk install` (deploy), `now-sdk transform`, `now-sdk dependencies`.
-- The project uses `@servicenow/isomorphic-rollup` as the underlying bundler — this is not a standard Vite/Webpack setup.
-- App naming follows the ServiceNow scoped app convention: `x-{scope}-{app-name}` (e.g. `x-326171-react-test-app`).
-- `now.config.json` holds ServiceNow-specific app configuration (scope, app sys_id, instance connection, etc.).
-- `now.prebuild.mjs` is a prebuild hook executed before the SDK build step.
-- TypeScript is supported natively via `@types/react` and `typescript` as dev dependencies.
-- React and React DOM (`19.x`) are standard dependencies.
-- The `@servicenow/glide` package provides TypeScript types for Glide APIs (server-side — not available in the browser).
+All data retrieval and mutations go through **ServiceNow Table API** or **Scripted REST APIs**.
 
-When the agent generates or modifies any SDK app code, it must respect these conventions and not substitute standard tooling (e.g. Vite, CRA) for the `now-sdk` build system.
-The project lives in a single repository split into two distinct packages that are developed and versioned together but distributed independently:
-- **`/servicenow-app`** — The ServiceNow scoped application. Installed once per instance by an administrator. Provides all server-side infrastructure: Scripted REST APIs, configuration tables, ACLs, and security setup.
-- **`/npm-package`** — The React component library. Installed per SDK project by the developer via `npm install`. Contains all React components, the theme file, and API utility functions that call the endpoints provided by the ServiceNow app.
+**All server-side logic goes through the Scripted REST API** — this includes not just qualifier evaluation but also field metadata resolution (sys_dictionary, sys_dictionary_override), choice list fetching (sys_choice), and table hierarchy resolution (GlideTableHierarchy). The browser never queries these tables directly.
 
-The two packages are tightly coupled: changes to a REST endpoint in the ServiceNow app must be reflected in the NPM package. Versioning must be kept in sync, with compatibility ranges clearly documented.
-- Every component is its own `.tsx` file and exported class/function.
-- Components follow **atomic design**: atoms (Button, Input, Text) → molecules (FormField, SearchBar) → organisms (Form, DataTable, Modal).
-- All composite components are assembled from smaller components in this library.
+The single metadata endpoint (`POST /api/x_326171_ssdk_pack/rhino/metadata`) handles all of this in one round-trip per table, returning `FieldData` objects ready for use by the Form organism.
 
-#### Data Layer
-- All data retrieval and mutations go through **ServiceNow Table API** or **Scripted REST APIs**.
-- Data returned from any API must surface the **display value** to the user while retaining the **actual stored value** internally (e.g. for reference fields).
-- Any logic requiring access to Glide APIs (e.g. evaluating a condition that references a Script Include) must be routed through a dedicated **Scripted REST endpoint** that executes on the ServiceNow server via the **Rhino engine** and returns the result to the browser.
+Data returned from any API surfaces the **display value** to the user while retaining the **actual stored value** internally.
 
-#### Theming
-- A single **theme file** defines all global styling variables: primary color, secondary color, fonts, sizes, margins, borders, border-radius, etc.
-- All component styles reference this theme file.
-- Individual components accept **style override props** to allow per-instance customization without modifying the theme.
+### Service Layer Summary
 
-#### State Management
-- **Simple components** (atoms, simple molecules with one or two state values) use React's `useState` hook.
-- **Complex components** (organisms and any molecule with genuinely complex, interdependent state) use React's built-in `useReducer` hook. `useReducer` centralises all state transitions in a single reducer function — each change is expressed as a dispatched action, and the reducer returns the new state atomically. This prevents scattered, inconsistent state updates across multiple `useState` calls.
-- No third-party state management libraries are used.
+| Service | Responsibility | Caches? |
+|---------|---------------|---------|
+| `CacheService` | Shared in-memory key-value store | — |
+| `ServiceNowClient` | Base HTTP layer, sole caller of `fetch()` | No |
+| `RhinoService` | Field metadata via companion app endpoint | Yes — per table+field-set |
+| `RecordService` | Record CRUD via Table API | No |
+| `SearchService` | Reference field typeahead search | No |
 
+### Theming
 
-- All API calls must be made in the context of the **currently logged-in ServiceNow user**. This is achieved by using session-based authentication (the browser's active ServiceNow session cookie) — never by passing stored credentials, hardcoded tokens, or service account secrets from the client side.
-- By making calls as the logged-in user, ServiceNow's native **ACL system** handles all data access control automatically. The API will only return records the user is permitted to see — no additional filtering or access checks need to be implemented in the components or services.
-- Sensitive data (passwords, tokens, secrets) must **never** appear in: browser memory (beyond session), API responses, URLs, console output, or source code.
-- Never use or store service account credentials on the client side. If a server-side operation requires elevated access, it must be handled in a Scripted REST API on the server, scoped appropriately, and never expose the credential to the browser.
+A single **theme file** (`src/client/npm-package/theme/theme.ts`) defines all global styling variables. All component styles reference this theme via `useTheme()`. Individual components accept **style override props** for per-instance customization.
+
+### State Management
+
+- **Simple components** (atoms, simple molecules) use `useState`.
+- **Complex components** (organisms, molecules with genuinely complex interdependent state) use `useReducer`. All state transitions expressed as dispatched actions handled atomically in the reducer.
+- No third-party state management libraries.
+
+### Security
+
+- All API calls made in the context of the currently logged-in ServiceNow user via session-based authentication — never stored credentials or hardcoded tokens.
+- ServiceNow's native ACL system handles all data access control automatically.
+- Sensitive data must **never** appear in browser memory (beyond session), API responses, URLs, console output, or source code.
 
 ---
 
@@ -154,16 +148,14 @@ The two packages are tightly coupled: changes to a REST endpoint in the ServiceN
 - **Components:** `PascalCase`
 - **Variables/Functions:** `camelCase`
 - **Constants:** `UPPER_SNAKE_CASE`
-- **Theme variables:** `[e.g. --color-primary, camelCase object keys — to be decided]`
+- **Theme variables:** camelCase object keys (e.g. `colorPrimary`, `fontSizeBase`)
 
-- Remove the formatting/linting section — the agent is expected to be self-consistent in its formatting choices throughout the project.
-
-### Naming Conventions
+### Hard Rules
 - Never place Glide API logic in the browser — always proxy through a Scripted REST API.
 - Never hardcode credentials, tokens, or secrets anywhere.
 - Never break atomic design: if a component needs a sub-element that could be its own component, make it one.
 - Never silently swallow errors — always handle and surface them appropriately.
-- **Only the following NPM packages may be used:** those provided by ServiceNow (`@servicenow/*`) and React (`react`, `react-dom`). No other third-party NPM packages are permitted under any circumstance. All functionality must be built from scratch using only these packages and native browser/TypeScript APIs.
+- **Only the following NPM packages may be used:** those provided by ServiceNow (`@servicenow/*`) and React (`react`, `react-dom`). No other third-party NPM packages under any circumstance. Build from scratch using only these packages and native browser/TypeScript APIs.
 
 ---
 
@@ -172,39 +164,41 @@ The two packages are tightly coupled: changes to a REST endpoint in the ServiceN
 ```
 / (repository root = ServiceNow app)
 ├── now.config.json                     # SDK app config (scope, scopeId, name)
-├── now.prebuild.mjs                    # Prebuild hook for client asset bundling
-├── package.json                        # SDK dependencies
-├── .eslintrc                           # ESLint with @servicenow/sdk-app-plugin
-├── docs/                               # Project documentation
-│   ├── specs/                          # Spec documents
-│   └── phases/                         # Phase documents and review checklists
+├── now.prebuild.mjs                     # Prebuild hook
+├── package.json                         # SDK dependencies
+├── .eslintrc                            # ESLint config
+├── docs/
+│   ├── specs/                           # Spec documents
+│   └── phases/                          # Phase documents
 └── src/
-    ├── client/                         # All client-side source code
-    │   ├── component-explorer/         # UI Page — living documentation app (Phase 9)
-    │   └── npm-package/                # React component library
+    ├── client/
+    │   ├── component-explorer/          # UI Page — living documentation (Phase 9)
+    │   └── npm-package/                 # React component library
     │       ├── components/
-    │       │   ├── atoms/              # Primitive components
-    │       │   ├── molecules/          # Composed components
-    │       │   └── organisms/          # Complex components (Form, etc.)
-    │       ├── services/               # Shared services
+    │       │   ├── atoms/
+    │       │   ├── molecules/
+    │       │   └── organisms/
+    │       ├── services/
     │       │   ├── CacheService.ts
     │       │   ├── ServiceNowClient.ts
-    │       │   ├── MetadataService.ts
+    │       │   ├── RhinoService.ts
     │       │   ├── RecordService.ts
-    │       │   ├── SearchService.ts
-    │       │   └── RhinoService.ts
-    │       ├── context/                # React context providers
+    │       │   └── SearchService.ts
+    │       ├── context/
     │       │   ├── ThemeContext.tsx
     │       │   └── ServiceNowContext.tsx
     │       ├── theme/
-    │       │   └── theme.ts            # Global styling variables
+    │       │   └── theme.ts
     │       ├── types/
-    │       │   └── index.ts            # All shared types
-    │       └── index.ts                # Main entry point — all exports
-    ├── server/                         # Server-side scripts
+    │       │   └── index.ts
+    │       └── index.ts                 # Main entry point — all exports
+    ├── server/
     │   ├── tsconfig.json
-    │   └── api/                        # Scripted REST APIs (Rhino, hierarchy endpoints)
-    └── fluent/                         # ServiceNow Fluent API definitions
+    │   └── api/
+    │       └── getRecordMetadata.ts     # Scripted REST API handler
+    └── fluent/
+        └── api/
+            └── rhino.now.ts             # Fluent REST API definition
 ```
 
 ### Key Files
@@ -213,25 +207,21 @@ The two packages are tightly coupled: changes to a REST endpoint in the ServiceN
 | `now.config.json` | SDK app config — scope, scopeId, name |
 | `src/client/npm-package/index.ts` | Main entry point for the component library |
 | `src/client/npm-package/theme/theme.ts` | Global styling variables |
-| `src/client/npm-package/services/CacheService.ts` | Centralised in-memory cache |
+| `src/client/npm-package/services/CacheService.ts` | Shared in-memory cache |
 | `src/client/npm-package/services/ServiceNowClient.ts` | Base HTTP layer |
-| `src/client/npm-package/services/RhinoService.ts` | Qualifier evaluation endpoint |
-| `src/server/api/` | Scripted REST API handler modules (exported `process` functions) |
-| `src/fluent/api/` | Fluent RestApi definitions for Scripted REST API artifacts |
+| `src/client/npm-package/services/RhinoService.ts` | Field metadata fetching and caching |
+| `src/server/api/getRecordMetadata.ts` | Server-side metadata handler |
+| `src/fluent/api/rhino.now.ts` | Fluent REST API definition for metadata endpoint |
 
 ---
 
 ## 7. Current Status
 
 ### ✅ Completed
-- Project definition, architecture planning, and this startup document
-- An empty ServiceNow SDK app repository will be provided as the starting point for the agent to build from
-
-### 🔄 In Progress
-- Empty SDK app repository setup (by EsTech Development, to be handed to agent)
+- Phases 1, 2, and 3 — scaffolding, theme/types, and service layer
 
 ### 📋 Up Next
-- Phase 1: Monorepo scaffolding from the provided empty SDK repo (see Milestones & Build Order)
+- Phase 4: Foundation Atoms
 
 ---
 
@@ -239,15 +229,10 @@ The two packages are tightly coupled: changes to a REST endpoint in the ServiceN
 
 ### Constraints
 - No direct browser access to Glide APIs — all server-side ServiceNow logic must be proxied via Scripted REST APIs.
-- Components must function within the constraints of the **ServiceNow SDK IDE environment**.
-- [Any ServiceNow version or SDK version constraints?]
-- [Any known API rate limits or authentication constraints?]
+- Components must function within the constraints of the ServiceNow SDK IDE environment.
 
 ### Bugs
-- None yet — project in early stages.
-
-### Blockers
-- [Any external dependencies, approvals, or resources not yet available?]
+- None known.
 
 ---
 
@@ -261,16 +246,16 @@ The two packages are tightly coupled: changes to a REST endpoint in the ServiceN
 
 ### Dos ✅
 - Follow atomic design strictly — build from existing primitives where possible.
-- Reference the theme file for all default styling; never hardcode style values.
+- Reference the theme file for all default styling via `useTheme()` — never hardcode style values.
 - Always define a full TypeScript props interface for every component.
 - Route any ServiceNow server-side logic through the designated Scripted REST API.
 - Show display values in the UI; retain actual values internally.
 - Ask for clarification if a task is ambiguous before proceeding.
 
 ### Don'ts ❌
-- Do not install or use any NPM package other than `@servicenow/*` and `react`/`react-dom`. No exceptions — not even well-known utility libraries (e.g. lodash, axios, date-fns). Build from scratch using native APIs.
+- Do not install or use any NPM package other than `@servicenow/*` and `react`/`react-dom`. No exceptions.
 - Do not place Glide API logic or ServiceNow server-side code in browser-executed files.
-- Do not hardcode colors, fonts, sizes, or other style values — always use theme variables.
+- Do not hardcode colors, fonts, sizes, or other style values — always use theme variables via `useTheme()`.
 - Do not expose or log tokens, passwords, or secrets anywhere.
 - Do not install new dependencies without asking first.
 - Do not delete or overwrite files unless explicitly instructed.

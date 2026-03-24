@@ -188,37 +188,46 @@ interface PopoverRow {
 }
 
 // ---------------------------------------------------------------------------
-// Field component
+// Private ReferenceField sub-component — state only lives when kind=reference
 // ---------------------------------------------------------------------------
 
-export function Field({
+interface ReferenceFieldInternalProps {
+  name: string;
+  label: string;
+  mandatory: boolean;
+  readOnly: boolean;
+  hasError: boolean;
+  value: string;
+  displayValue: string;
+  onChange: (field: string, value: string, displayValue: string) => void;
+  reference?: string;
+  referenceQual?: string;
+  filter?: string;
+  searchFields?: string[];
+  previewFields?: string[];
+  style?: React.CSSProperties;
+  className?: string;
+}
+
+function ReferenceField({
   name,
   label,
-  type,
-  value,
-  displayValue = '',
   mandatory,
   readOnly,
   hasError,
+  value,
+  displayValue,
   onChange,
-  maxLength,
-  style,
-  className,
-  choices,
-  dependentValue,
-  mode,
   reference,
   referenceQual,
   filter,
   searchFields,
   previewFields,
-  isChoiceField,
-}: FieldProps): React.ReactElement {
+  style,
+  className,
+}: ReferenceFieldInternalProps): React.ReactElement {
   const theme = useTheme();
 
-  const kind = resolveKind(type, isChoiceField, maxLength);
-
-  // --- Reference field state (always initialised; only active when kind === 'reference') ---
   const [searchResults, setSearchResults] = useState<ReferenceSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | undefined>(undefined);
@@ -234,13 +243,12 @@ export function Field({
 
   // When filter changes: cancel in-flight search, clear results.
   useEffect(() => {
-    if (kind !== 'reference') return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
     searchGenRef.current += 1;
     setSearchResults([]);
     setIsSearching(false);
     setSearchError(undefined);
-  }, [filter, kind]);
+  }, [filter]);
 
   // Clean up debounce timer on unmount
   useEffect(() => {
@@ -347,6 +355,133 @@ export function Field({
     }
   }, [value, reference, previewFields]);
 
+  const popoverContent = popoverLoading ? (
+    <div style={{ color: theme.colorTextMuted, fontSize: theme.fontSizeSmall }}>Loading...</div>
+  ) : popoverError ? (
+    <div style={{ color: theme.colorDanger, fontSize: theme.fontSizeSmall }}>{popoverError}</div>
+  ) : (
+    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: theme.fontSizeSmall }}>
+      <tbody>
+        {popoverRows.map((row) => (
+          <tr key={row.label}>
+            <td style={{
+              padding: `${theme.spacingXs} ${theme.spacingSm} ${theme.spacingXs} 0`,
+              color: theme.colorTextMuted,
+              fontWeight: theme.fontWeightMedium,
+              whiteSpace: 'nowrap',
+              verticalAlign: 'top',
+            }}>
+              {row.label}
+            </td>
+            <td style={{
+              padding: `${theme.spacingXs} 0`,
+              color: theme.colorText,
+              wordBreak: 'break-word',
+            }}>
+              {row.displayValue}
+            </td>
+          </tr>
+        ))}
+        {popoverRows.length === 0 && (
+          <tr>
+            <td style={{ color: theme.colorTextMuted }}>No fields to display</td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  );
+
+  return (
+    <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
+      <div ref={anchorRef}>
+        <ReferenceInput
+          id={name}
+          value={value}
+          displayValue={displayValue}
+          onChange={handleReferenceChange}
+          onSearchTermChange={handleSearchTermChange}
+          onClear={handleReferenceClear}
+          onInfoClick={handleInfoClick}
+          searchResults={searchResults}
+          isSearching={isSearching}
+          searchError={searchError}
+          readOnly={readOnly}
+          hasError={hasError}
+        />
+      </div>
+      <Popover
+        isOpen={popoverOpen}
+        onClose={() => setPopoverOpen(false)}
+        title={displayValue || label}
+        anchorRef={anchorRef as React.RefObject<HTMLElement>}
+      >
+        {popoverContent}
+      </Popover>
+    </FieldWrapper>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Field component
+// ---------------------------------------------------------------------------
+
+export function Field({
+  name,
+  label,
+  type,
+  value,
+  displayValue = '',
+  mandatory,
+  readOnly,
+  hasError,
+  onChange,
+  maxLength,
+  style,
+  className,
+  choices,
+  dependentValue,
+  mode,
+  reference,
+  referenceQual,
+  filter,
+  searchFields,
+  previewFields,
+  isChoiceField,
+}: FieldProps): React.ReactElement {
+  const theme = useTheme();
+
+  const kind = resolveKind(type, isChoiceField, maxLength);
+
+  // ---------------------------------------------------------------------------
+  // Shared input style — passed to all atoms and applied to all native inputs.
+  // All field types use this as the base so styling is consistent.
+  // ---------------------------------------------------------------------------
+
+  const inputStyle: React.CSSProperties = {
+    display: 'block',
+    width: '100%',
+    height: theme.inputHeight,
+    padding: `0 ${theme.inputPaddingHorizontal}`,
+    fontFamily: theme.fontFamily,
+    fontSize: theme.fontSizeBase,
+    color: theme.colorText,
+    backgroundColor: theme.inputBackgroundColor,
+    border: `${theme.borderWidth} solid ${theme.colorBorder}`,
+    borderRadius: theme.borderRadius,
+    boxSizing: 'border-box',
+    outline: 'none',
+    transition: `border-color ${theme.transitionSpeed}`,
+  };
+
+  // Textarea variant: same base, overrides for multi-line layout.
+  // No separate border definition — border comes from inputStyle above.
+  const textareaStyle: React.CSSProperties = {
+    ...inputStyle,
+    height: 'auto',
+    padding: theme.inputPaddingHorizontal,
+    resize: 'vertical',
+  };
+
   // ---------------------------------------------------------------------------
   // Read-only span style (shared across text-like kinds)
   // ---------------------------------------------------------------------------
@@ -363,39 +498,20 @@ export function Field({
   };
 
   // ---------------------------------------------------------------------------
-  // Textarea style (used when kind === 'textarea' and not readOnly)
-  // ---------------------------------------------------------------------------
-
-  const textareaStyle: React.CSSProperties = {
-    display: 'block',
-    width: '100%',
-    padding: `${theme.inputPaddingHorizontal}`,
-    fontFamily: theme.fontFamily,
-    fontSize: theme.fontSizeBase,
-    color: theme.colorText,
-    backgroundColor: theme.inputBackgroundColor,
-    border: `${theme.borderWidth} solid ${theme.colorBorder}`,
-    borderRadius: theme.borderRadius,
-    boxSizing: 'border-box',
-    outline: 'none',
-    resize: 'vertical',
-  };
-
-  // ---------------------------------------------------------------------------
   // Disabled checkbox style (used for boolean readOnly)
   // ---------------------------------------------------------------------------
+
+  const disabledCheckboxContainerStyle: React.CSSProperties = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    height: theme.inputHeight,
+  };
 
   const disabledCheckboxStyle: React.CSSProperties = {
     width: '1rem',
     height: '1rem',
     cursor: 'default',
     accentColor: theme.colorPrimary,
-  };
-
-  const disabledCheckboxContainerStyle: React.CSSProperties = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    height: theme.inputHeight,
   };
 
   // ---------------------------------------------------------------------------
@@ -412,7 +528,7 @@ export function Field({
     }
     return (
       <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
-        <Input id={name} value={value} onChange={(v) => onChange(name, v, v)} />
+        <Input id={name} value={value} onChange={(v) => onChange(name, v, v)} style={inputStyle} />
       </FieldWrapper>
     );
   }
@@ -427,7 +543,7 @@ export function Field({
     }
     return (
       <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
-        <Input id={name} value={value} onChange={(v) => onChange(name, v, v)} type="number" />
+        <Input id={name} value={value} onChange={(v) => onChange(name, v, v)} type="number" style={inputStyle} />
       </FieldWrapper>
     );
   }
@@ -449,6 +565,8 @@ export function Field({
           maxLength={maxLength}
           rows={4}
           style={textareaStyle}
+          onFocus={(e) => { e.currentTarget.style.borderColor = theme.colorBorderFocus; }}
+          onBlur={(e) => { e.currentTarget.style.borderColor = theme.colorBorder; }}
         />
       </FieldWrapper>
     );
@@ -519,6 +637,7 @@ export function Field({
           value={value}
           options={options}
           onChange={handleChoiceChange}
+          style={inputStyle}
           placeholder={showBlank ? '' : undefined}
         />
       </FieldWrapper>
@@ -526,70 +645,24 @@ export function Field({
   }
 
   if (kind === 'reference') {
-    const popoverContent = popoverLoading ? (
-      <div style={{ color: theme.colorTextMuted, fontSize: theme.fontSizeSmall }}>Loading...</div>
-    ) : popoverError ? (
-      <div style={{ color: theme.colorDanger, fontSize: theme.fontSizeSmall }}>{popoverError}</div>
-    ) : (
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: theme.fontSizeSmall }}>
-        <tbody>
-          {popoverRows.map((row) => (
-            <tr key={row.label}>
-              <td style={{
-                padding: `${theme.spacingXs} ${theme.spacingSm} ${theme.spacingXs} 0`,
-                color: theme.colorTextMuted,
-                fontWeight: theme.fontWeightMedium,
-                whiteSpace: 'nowrap',
-                verticalAlign: 'top',
-              }}>
-                {row.label}
-              </td>
-              <td style={{
-                padding: `${theme.spacingXs} 0`,
-                color: theme.colorText,
-                wordBreak: 'break-word',
-              }}>
-                {row.displayValue}
-              </td>
-            </tr>
-          ))}
-          {popoverRows.length === 0 && (
-            <tr>
-              <td style={{ color: theme.colorTextMuted }}>No fields to display</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    );
-
     return (
-      <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
-        <div ref={anchorRef}>
-          <ReferenceInput
-            id={name}
-            value={value}
-            displayValue={displayValue}
-            onChange={handleReferenceChange}
-            onSearchTermChange={handleSearchTermChange}
-            onClear={handleReferenceClear}
-            onInfoClick={handleInfoClick}
-            searchResults={searchResults}
-            isSearching={isSearching}
-            searchError={searchError}
-            readOnly={readOnly}
-            mandatory={mandatory}
-            hasError={hasError}
-          />
-        </div>
-        <Popover
-          isOpen={popoverOpen}
-          onClose={() => setPopoverOpen(false)}
-          title={displayValue || label}
-          anchorRef={anchorRef as React.RefObject<HTMLElement>}
-        >
-          {popoverContent}
-        </Popover>
-      </FieldWrapper>
+      <ReferenceField
+        name={name}
+        label={label}
+        mandatory={mandatory}
+        readOnly={readOnly}
+        hasError={hasError}
+        value={value}
+        displayValue={displayValue}
+        onChange={onChange}
+        reference={reference}
+        referenceQual={referenceQual}
+        filter={filter}
+        searchFields={searchFields}
+        previewFields={previewFields}
+        style={style}
+        className={className}
+      />
     );
   }
 
@@ -616,22 +689,6 @@ export function Field({
 
   const inputType = dateMode === 'datetime' ? 'datetime-local' : dateMode;
 
-  const dateInputStyle: React.CSSProperties = {
-    display: 'block',
-    width: '100%',
-    height: theme.inputHeight,
-    padding: `0 ${theme.inputPaddingHorizontal}`,
-    fontFamily: theme.fontFamily,
-    fontSize: theme.fontSizeBase,
-    color: theme.colorText,
-    backgroundColor: theme.inputBackgroundColor,
-    border: `${theme.borderWidth} solid ${theme.colorBorder}`,
-    borderRadius: theme.borderRadius,
-    boxSizing: 'border-box',
-    outline: 'none',
-    transition: `border-color ${theme.transitionSpeed}`,
-  };
-
   function handleDateChange(e: React.ChangeEvent<HTMLInputElement>): void {
     const raw = e.target.value;
     let snValue: string;
@@ -649,13 +706,9 @@ export function Field({
         value={inputValue}
         onChange={handleDateChange}
         required={mandatory}
-        style={dateInputStyle}
-        onFocus={(e) => {
-          e.currentTarget.style.borderColor = theme.colorBorderFocus;
-        }}
-        onBlur={(e) => {
-          e.currentTarget.style.borderColor = theme.colorBorder;
-        }}
+        style={inputStyle}
+        onFocus={(e) => { e.currentTarget.style.borderColor = theme.colorBorderFocus; }}
+        onBlur={(e) => { e.currentTarget.style.borderColor = theme.colorBorder; }}
       />
     </FieldWrapper>
   );

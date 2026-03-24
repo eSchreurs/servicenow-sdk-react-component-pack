@@ -6,25 +6,6 @@ import { PropTable } from '../../components/PropTable';
 import { CodeSnippet } from '../../components/CodeSnippet';
 import { PageLayout } from '../../components/PageLayout';
 
-function InteractiveNote(): React.ReactElement {
-  const theme = useTheme();
-  return (
-    <div style={{
-      padding: theme.spacingMd,
-      backgroundColor: theme.colorBackgroundMuted,
-      border: `${theme.borderWidth} solid ${theme.colorBorder}`,
-      borderRadius: theme.borderRadius,
-      fontFamily: theme.fontFamily,
-      fontSize: theme.fontSizeSmall,
-      color: theme.colorTextMuted,
-    }}>
-      <strong style={{ color: theme.colorText }}>Note:</strong> The interactive demo connects to the live ServiceNow instance.
-      Typeahead search requires a valid session on the instance. The component is shown with correct
-      props — search, selection, and the info popover all function normally when running inside ServiceNow.
-    </div>
-  );
-}
-
 export function ReferenceFieldPage(): React.ReactElement {
   const theme = useTheme();
   const [liveValue, setLiveValue] = useState('');
@@ -137,8 +118,7 @@ export function ReferenceFieldPage(): React.ReactElement {
                 onChange={() => undefined}
               />
 
-              <Text variant="label" style={{ marginTop: theme.spacingMd }}>Interactive (live instance)</Text>
-              <InteractiveNote />
+              <Text variant="label" style={{ marginTop: theme.spacingMd }}>Interactive</Text>
               <Field
                 type="reference"
                 name="rf-live"
@@ -151,6 +131,8 @@ export function ReferenceFieldPage(): React.ReactElement {
                 reference="sys_user"
                 table="incident"
                 sysId=""
+                searchFields={['name', 'email', 'department']}
+                previewFields={['name', 'email', 'department']}
                 onChange={handleChange}
               />
               <Text variant="caption">
@@ -207,6 +189,8 @@ const [assignedToDv, setAssignedToDv] = useState('');
   reference="sys_user"
   table="incident"
   sysId="abc123"
+  searchFields={['name', 'email', 'department']}
+  previewFields={['name', 'email', 'department']}
   onChange={(_field, v, dv) => {
     setAssignedTo(v);
     setAssignedToDv(dv);
@@ -226,6 +210,7 @@ const [assignedToDv, setAssignedToDv] = useState('');
   reference="sys_user"
   referenceQual="active=true"
   filter={groupFilter}
+  searchFields={['name', 'email', 'department']}
   previewFields={['name', 'email', 'department']}
   table="incident"
   sysId="abc123"

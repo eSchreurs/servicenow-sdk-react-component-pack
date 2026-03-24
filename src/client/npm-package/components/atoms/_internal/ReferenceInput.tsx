@@ -25,7 +25,6 @@ interface ReferenceInputProps {
   isSearching: boolean;
   searchError?: string;
   readOnly?: boolean;
-  mandatory?: boolean;
   hasError?: boolean;
   placeholder?: string;
   style?: React.CSSProperties;
@@ -44,7 +43,6 @@ export function ReferenceInput({
   isSearching,
   searchError,
   readOnly = false,
-  mandatory,
   hasError = false,
   placeholder = 'Type to search...',
   style,
@@ -281,7 +279,6 @@ export function ReferenceInput({
             }}
             onBlur={() => setIsFocused(false)}
             placeholder={placeholder}
-            required={mandatory}
             style={textStyle}
             autoComplete="off"
           />

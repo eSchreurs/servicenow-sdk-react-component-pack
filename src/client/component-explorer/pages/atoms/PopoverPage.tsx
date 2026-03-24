@@ -15,9 +15,9 @@ export function PopoverPage(): React.ReactElement {
   const [infoOpen, setInfoOpen] = useState(false);
   const [noTitleOpen, setNoTitleOpen] = useState(false);
 
-  const basicRef = useRef<HTMLButtonElement>(null);
-  const infoRef = useRef<HTMLButtonElement>(null);
-  const noTitleRef = useRef<HTMLButtonElement>(null);
+  const basicRef = useRef<HTMLDivElement>(null);
+  const infoRef = useRef<HTMLDivElement>(null);
+  const noTitleRef = useRef<HTMLDivElement>(null);
 
   const colStyle: React.CSSProperties = {
     display: 'flex',
@@ -64,13 +64,14 @@ export function PopoverPage(): React.ReactElement {
             <div style={colStyle}>
               <Text variant="label">Basic popover</Text>
               <div style={rowStyle}>
-                <Button
-                  ref={basicRef as React.Ref<HTMLButtonElement>}
-                  variant="secondary"
-                  onClick={() => setBasicOpen((o) => !o)}
-                >
-                  {basicOpen ? 'Close popover' : 'Open popover'}
-                </Button>
+                <div ref={basicRef} style={{ display: 'inline-block' }}>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setBasicOpen((o) => !o)}
+                  >
+                    {basicOpen ? 'Close popover' : 'Open popover'}
+                  </Button>
+                </div>
                 <Popover
                   isOpen={basicOpen}
                   onClose={() => setBasicOpen(false)}
@@ -85,13 +86,14 @@ export function PopoverPage(): React.ReactElement {
 
               <Text variant="label">Record info preview — typical use case</Text>
               <div style={rowStyle}>
-                <Button
-                  ref={infoRef as React.Ref<HTMLButtonElement>}
-                  variant="ghost"
-                  onClick={() => setInfoOpen((o) => !o)}
-                >
-                  View record details
-                </Button>
+                <div ref={infoRef} style={{ display: 'inline-block' }}>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setInfoOpen((o) => !o)}
+                  >
+                    View record details
+                  </Button>
+                </div>
                 <Popover
                   isOpen={infoOpen}
                   onClose={() => setInfoOpen(false)}
@@ -121,14 +123,15 @@ export function PopoverPage(): React.ReactElement {
 
               <Text variant="label">Without title</Text>
               <div style={rowStyle}>
-                <Button
-                  ref={noTitleRef as React.Ref<HTMLButtonElement>}
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setNoTitleOpen((o) => !o)}
-                >
-                  No title popover
-                </Button>
+                <div ref={noTitleRef} style={{ display: 'inline-block' }}>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setNoTitleOpen((o) => !o)}
+                  >
+                    No title popover
+                  </Button>
+                </div>
                 <Popover
                   isOpen={noTitleOpen}
                   onClose={() => setNoTitleOpen(false)}
@@ -164,14 +167,13 @@ export function PopoverPage(): React.ReactElement {
 import { useRef, useState } from 'react';
 
 const [isOpen, setIsOpen] = useState(false);
-const anchorRef = useRef<HTMLButtonElement>(null);
+const anchorRef = useRef<HTMLDivElement>(null);
 
-<Button
-  ref={anchorRef}
-  onClick={() => setIsOpen((o) => !o)}
->
-  Show details
-</Button>
+<div ref={anchorRef} style={{ display: 'inline-block' }}>
+  <Button onClick={() => setIsOpen((o) => !o)}>
+    Show details
+  </Button>
+</div>
 
 <Popover
   isOpen={isOpen}

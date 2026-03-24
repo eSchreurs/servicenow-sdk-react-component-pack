@@ -39,6 +39,20 @@ export { Badge } from './components/atoms/Badge';
 export { Tooltip } from './components/atoms/Tooltip';
 export { Popover } from './components/atoms/Popover';
 
+// Molecules — field molecules
+export { StringField } from './components/molecules/StringField';
+export { TextAreaField } from './components/molecules/TextAreaField';
+export { NumberField } from './components/molecules/NumberField';
+export { CheckboxField } from './components/molecules/CheckboxField';
+export { DateTimeField } from './components/molecules/DateTimeField';
+export type { DateTimeFieldProps } from './components/molecules/DateTimeField';
+export { ChoiceField } from './components/molecules/ChoiceField';
+export type { ChoiceFieldProps } from './components/molecules/ChoiceField';
+export { ReferenceField } from './components/molecules/ReferenceField';
+export type { ReferenceFieldProps } from './components/molecules/ReferenceField';
+export { SearchBar } from './components/molecules/SearchBar';
+export type { SearchBarProps } from './components/molecules/SearchBar';
+
 // Types
 export type {
   RawFieldValue,
@@ -51,5 +65,6 @@ export type {
   FieldData,
   ChoiceEntry,
   ReferenceSearchResult,
+  BaseFieldProps,
 } from './types/index';
 export { ServiceNowError } from './types/index';

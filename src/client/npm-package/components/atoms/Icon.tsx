@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTheme } from '../../context/ThemeContext';
 
 export type IconName = 'search' | 'clear' | 'info' | 'edit' | 'calendar' | 'check';
 
@@ -56,7 +57,9 @@ const ICON_PATHS: Record<IconName, React.ReactElement> = {
   ),
 };
 
-export function Icon({ name, size = 16, color = 'currentColor', style, className }: IconProps): React.ReactElement {
+export function Icon({ name, size, color = 'currentColor', style, className }: IconProps): React.ReactElement {
+  const theme = useTheme();
+  const resolvedSize = size ?? theme.iconSizeDefault;
   const svgStyle: React.CSSProperties = {
     display: 'inline-block',
     flexShrink: 0,
@@ -66,8 +69,8 @@ export function Icon({ name, size = 16, color = 'currentColor', style, className
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width={size}
-      height={size}
+      width={resolvedSize}
+      height={resolvedSize}
       viewBox="0 0 24 24"
       fill="none"
       stroke={color}

@@ -19,10 +19,10 @@ export function Badge({
   // Colors for each variant: [background, text, border]
   const variantColors: Record<NonNullable<BadgeProps['variant']>, [string, string, string]> = {
     default: [theme.colorBackgroundMuted, theme.colorTextMuted, theme.colorBorder],
-    primary: ['#dbeafe', theme.colorPrimary, '#93c5fd'],
-    success: ['#dcfce7', '#15803d', '#86efac'],
-    warning: ['#fef9c3', '#a16207', '#fde047'],
-    danger: ['#fee2e2', theme.colorDanger, '#fca5a5'],
+    primary: [theme.colorPrimaryBackground, theme.colorPrimary, theme.colorPrimaryBorder],
+    success: [theme.colorSuccessBackground, theme.colorSuccess, theme.colorSuccessBorder],
+    warning: [theme.colorWarningBackground, theme.colorWarning, theme.colorWarningBorder],
+    danger: [theme.colorDangerBackground, theme.colorDanger, theme.colorDangerBorder],
   };
 
   const [bgColor, textColor, borderColor] = variantColors[variant];

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -28,37 +28,53 @@ export function Popover({
   const theme = useTheme();
   const popoverRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
-  const [openUpward, setOpenUpward] = useState(false);
+  // openUpward = true means the popover renders above the anchor (default).
+  // Flips to false (downward) only when there is insufficient space above.
+  const [openUpward, setOpenUpward] = useState(true);
 
-  // Position the popover relative to anchor element
-  useEffect(() => {
-    if (!isOpen || !anchorRef.current) return;
+  const calculatePosition = useCallback(() => {
+    if (!anchorRef.current) return;
 
     const anchor = anchorRef.current;
     const anchorRect = anchor.getBoundingClientRect();
     const scrollY = window.scrollY || document.documentElement.scrollTop;
     const scrollX = window.scrollX || document.documentElement.scrollLeft;
 
-    const viewportHeight = window.innerHeight;
-    const spaceBelow = viewportHeight - anchorRect.bottom;
     const spaceAbove = anchorRect.top;
+    const spaceBelow = window.innerHeight - anchorRect.bottom;
 
-    // Flip upward if not enough space below and more space above
-    const shouldOpenUpward =
-      spaceBelow < POPOVER_MIN_HEIGHT + OFFSET && spaceAbove > spaceBelow;
-    setOpenUpward(shouldOpenUpward);
+    // Default: open above. Flip downward only when space above is insufficient
+    // and there is more room below.
+    const shouldOpenDownward =
+      spaceAbove < POPOVER_MIN_HEIGHT + OFFSET && spaceBelow > spaceAbove;
 
-    const top = shouldOpenUpward
-      ? anchorRect.top + scrollY - OFFSET
-      : anchorRect.bottom + scrollY + OFFSET;
+    setOpenUpward(!shouldOpenDownward);
 
-    // Anchor to left edge of anchor element; clamp so popover stays on-screen
+    const top = shouldOpenDownward
+      ? anchorRect.bottom + scrollY + OFFSET          // top of popover at anchor bottom
+      : anchorRect.top + scrollY - OFFSET;            // bottom of popover at anchor top (via transform)
+
+    // Align to left edge of anchor; clamp so it stays on-screen
     const leftRaw = anchorRect.left + scrollX;
     const maxLeft = document.documentElement.clientWidth - POPOVER_WIDTH - OFFSET;
     const left = Math.max(OFFSET, Math.min(leftRaw, maxLeft));
 
     setPosition({ top, left });
-  }, [isOpen, anchorRef]);
+  }, [anchorRef]);
+
+  // Recalculate position on open, scroll, and resize
+  useEffect(() => {
+    if (!isOpen) return;
+
+    calculatePosition();
+
+    window.addEventListener('scroll', calculatePosition, true);
+    window.addEventListener('resize', calculatePosition);
+    return () => {
+      window.removeEventListener('scroll', calculatePosition, true);
+      window.removeEventListener('resize', calculatePosition);
+    };
+  }, [isOpen, calculatePosition]);
 
   // Close on click outside
   useEffect(() => {
@@ -101,9 +117,12 @@ export function Popover({
 
   const popoverStyle: React.CSSProperties = {
     position: 'absolute',
-    top: openUpward ? undefined : position.top,
-    bottom: openUpward ? `calc(100vh - ${position.top}px)` : undefined,
+    top: position.top,
     left: position.left,
+    // When opening upward, shift the element up by its own height so its
+    // bottom edge sits at the anchor's top edge. Using transform avoids
+    // any dependency on viewport height or scroll position.
+    transform: openUpward ? 'translateY(-100%)' : undefined,
     width: POPOVER_WIDTH,
     backgroundColor: theme.colorBackground,
     border: `${theme.borderWidth} solid ${theme.colorBorder}`,

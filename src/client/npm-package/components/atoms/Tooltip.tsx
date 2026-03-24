@@ -1,29 +1,6 @@
 import React, { useState } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 
-// Inject keyframe and tooltip CSS once on module load
-const TOOLTIP_STYLE_ID = 'snk-tooltip-styles';
-if (typeof document !== 'undefined' && !document.getElementById(TOOLTIP_STYLE_ID)) {
-  const styleEl = document.createElement('style');
-  styleEl.id = TOOLTIP_STYLE_ID;
-  styleEl.textContent = `
-    .snk-tooltip-content {
-      visibility: hidden;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 150ms;
-      position: absolute;
-      z-index: 9999;
-      white-space: nowrap;
-    }
-    .snk-tooltip-wrapper:hover .snk-tooltip-content {
-      visibility: visible;
-      opacity: 1;
-    }
-  `;
-  document.head.appendChild(styleEl);
-}
-
 interface TooltipProps {
   content: string;
   children: React.ReactNode;
@@ -80,9 +57,6 @@ export function Tooltip({
   const theme = useTheme();
   const [visible, setVisible] = useState(false);
 
-  const tooltipBg = '#1f2937';
-  const tooltipText = '#f9fafb';
-
   const wrapperStyle: React.CSSProperties = {
     position: 'relative',
     display: 'inline-flex',
@@ -90,8 +64,12 @@ export function Tooltip({
   };
 
   const contentStyle: React.CSSProperties = {
-    backgroundColor: tooltipBg,
-    color: tooltipText,
+    position: 'absolute',
+    zIndex: 9999,
+    whiteSpace: 'nowrap',
+    pointerEvents: 'none',
+    backgroundColor: theme.colorTooltipBackground,
+    color: theme.colorTooltipText,
     fontFamily: theme.fontFamily,
     fontSize: theme.fontSizeSmall,
     fontWeight: theme.fontWeightNormal,
@@ -99,6 +77,9 @@ export function Tooltip({
     padding: `${theme.spacingXs} ${theme.spacingSm}`,
     borderRadius: theme.borderRadiusSm,
     boxShadow: theme.shadowSm,
+    transition: `opacity ${theme.transitionSpeed}`,
+    visibility: visible ? 'visible' : 'hidden',
+    opacity: visible ? 1 : 0,
     ...getPositionStyles(position),
     ...style,
   };
@@ -106,24 +87,16 @@ export function Tooltip({
   return (
     <div
       style={wrapperStyle}
-      className={['snk-tooltip-wrapper', className].filter(Boolean).join(' ')}
+      className={className}
       onMouseEnter={() => setVisible(true)}
       onMouseLeave={() => setVisible(false)}
       onFocus={() => setVisible(true)}
       onBlur={() => setVisible(false)}
     >
       {children}
-      <div
-        role="tooltip"
-        className="snk-tooltip-content"
-        style={{
-          ...contentStyle,
-          visibility: visible ? 'visible' : 'hidden',
-          opacity: visible ? 1 : 0,
-        }}
-      >
+      <div role="tooltip" style={contentStyle}>
         {content}
-        <span style={getArrowStyles(position, tooltipBg)} aria-hidden="true" />
+        <span style={getArrowStyles(position, theme.colorTooltipBackground)} aria-hidden="true" />
       </div>
     </div>
   );

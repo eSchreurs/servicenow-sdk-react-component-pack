@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTheme } from '../../../npm-package/context/ThemeContext';
-import { ChoiceField } from '../../../npm-package/components/molecules/ChoiceField';
+import { Field } from '../../../npm-package/components/molecules/Field';
 import { Text } from '../../../npm-package/components/atoms/Text';
 import { PropTable } from '../../components/PropTable';
 import { CodeSnippet } from '../../components/CodeSnippet';
@@ -15,7 +15,6 @@ const PRIORITY_CHOICES: ChoiceEntry[] = [
   { value: '5', label: '5 - Planning' },
 ];
 
-// Dependent choices demo: category + sub-category
 const CATEGORY_CHOICES: ChoiceEntry[] = [
   { value: 'hardware', label: 'Hardware' },
   { value: 'software', label: 'Software' },
@@ -44,7 +43,6 @@ export function ChoiceFieldPage(): React.ReactElement {
     maxWidth: '400px',
   };
 
-  // When the category changes, clear subcategory if no longer valid
   function handleCategoryChange(_field: string, v: string) {
     setLiveCategory(v);
     const valid = SUBCATEGORY_CHOICES.filter(
@@ -57,15 +55,17 @@ export function ChoiceFieldPage(): React.ReactElement {
 
   return (
     <PageLayout
-      title="ChoiceField"
-      description="Field molecule for choice (select) fields. Composes FieldWrapper with SelectInput. Supports dependent choices — when dependentOnField and dependentValue are set, only matching choices are shown. Filtering always uses stored values, never display labels."
+      title="Field — choice (isChoiceField)"
+      description="Field molecule for choice (select) fields. Pass isChoiceField={true} — this flag takes priority over type in the resolution logic, regardless of the underlying type. Supports dependent choices via dependentValue."
       sections={[
         {
           title: 'Preview',
           children: (
             <div style={colStyle}>
               <Text variant="label">States</Text>
-              <ChoiceField
+              <Field
+                type="string"
+                isChoiceField={true}
                 name="pri-normal"
                 label="Priority"
                 value="3"
@@ -76,29 +76,33 @@ export function ChoiceFieldPage(): React.ReactElement {
                 choices={PRIORITY_CHOICES}
                 onChange={() => undefined}
               />
-              <ChoiceField
+              <Field
+                type="string"
+                isChoiceField={true}
                 name="pri-mandatory"
                 label="Priority"
                 value=""
-                displayValue=""
                 mandatory={true}
                 readOnly={false}
                 hasError={false}
                 choices={PRIORITY_CHOICES}
                 onChange={() => undefined}
               />
-              <ChoiceField
+              <Field
+                type="string"
+                isChoiceField={true}
                 name="pri-error"
                 label="Priority"
                 value=""
-                displayValue=""
                 mandatory={true}
                 readOnly={false}
                 hasError={true}
                 choices={PRIORITY_CHOICES}
                 onChange={() => undefined}
               />
-              <ChoiceField
+              <Field
+                type="string"
+                isChoiceField={true}
                 name="pri-readonly"
                 label="Priority (read-only)"
                 value="1"
@@ -109,11 +113,12 @@ export function ChoiceFieldPage(): React.ReactElement {
                 choices={PRIORITY_CHOICES}
                 onChange={() => undefined}
               />
-              <ChoiceField
+              <Field
+                type="string"
+                isChoiceField={true}
                 name="pri-readonly-empty"
                 label="Priority (read-only, empty)"
                 value=""
-                displayValue=""
                 mandatory={false}
                 readOnly={true}
                 hasError={false}
@@ -122,7 +127,9 @@ export function ChoiceFieldPage(): React.ReactElement {
               />
 
               <Text variant="label" style={{ marginTop: theme.spacingMd }}>Interactive — simple</Text>
-              <ChoiceField
+              <Field
+                type="string"
+                isChoiceField={true}
                 name="pri-live"
                 label="Priority"
                 value={livePriority}
@@ -133,15 +140,15 @@ export function ChoiceFieldPage(): React.ReactElement {
                 choices={PRIORITY_CHOICES}
                 onChange={(_field, v) => setLivePriority(v)}
               />
-              <Text variant="caption">
-                Value: "{livePriority}"
-              </Text>
+              <Text variant="caption">Value: "{livePriority}"</Text>
 
               <Text variant="label" style={{ marginTop: theme.spacingMd }}>Interactive — dependent choices</Text>
               <Text variant="caption" style={{ color: theme.colorTextMuted }}>
                 Subcategory choices filter to match the selected category's stored value.
               </Text>
-              <ChoiceField
+              <Field
+                type="string"
+                isChoiceField={true}
                 name="cat-live"
                 label="Category"
                 value={liveCategory}
@@ -152,7 +159,9 @@ export function ChoiceFieldPage(): React.ReactElement {
                 choices={CATEGORY_CHOICES}
                 onChange={handleCategoryChange}
               />
-              <ChoiceField
+              <Field
+                type="string"
+                isChoiceField={true}
                 name="subcat-live"
                 label="Subcategory"
                 value={liveSubcategory}
@@ -176,16 +185,17 @@ export function ChoiceFieldPage(): React.ReactElement {
           children: (
             <PropTable
               props={[
+                { name: 'isChoiceField', type: 'boolean', required: true, description: "Set to true to render a SelectInput regardless of type. This flag takes priority over type in the resolution logic." },
+                { name: 'type', type: 'string', required: true, description: 'The underlying ServiceNow field type. Pass the real type from metadata — isChoiceField overrides the rendering decision.' },
                 { name: 'name', type: 'string', required: true, description: 'Field name — used as the select id and passed to onChange.' },
                 { name: 'label', type: 'string', required: true, description: 'Label text rendered above the select.' },
                 { name: 'value', type: 'string', required: true, description: 'Currently selected stored value.' },
-                { name: 'displayValue', type: 'string', required: true, description: 'Display label for the selected value (used in read-only mode and for convenience).' },
                 { name: 'mandatory', type: 'boolean', required: true, description: 'When true, renders a red asterisk and suppresses the blank option when a value is already selected.' },
                 { name: 'readOnly', type: 'boolean', required: true, description: 'When true, renders the selected option label as plain text.' },
                 { name: 'hasError', type: 'boolean', required: true, description: 'When true, applies a red error outline.' },
                 { name: 'choices', type: 'ChoiceEntry[]', required: true, description: 'All available choices for this field, including those for all dependent values. Filtering is done internally.' },
                 { name: 'onChange', type: '(field: string, value: string, displayValue: string) => void', required: true, description: 'Called with the stored value and display label of the selected option.' },
-                { name: 'dependentOnField', type: 'string', description: 'Name of the field this choice depends on. Informational only — the actual filtering uses dependentValue.' },
+                { name: 'dependentOnField', type: 'string', description: 'Name of the field this choice depends on. Informational only — filtering uses dependentValue.' },
                 { name: 'dependentValue', type: 'string', description: 'Current stored value of the parent field. Choices whose dependentValue does not match are hidden.' },
                 { name: 'style', type: 'React.CSSProperties', description: 'Inline style overrides.' },
                 { name: 'className', type: 'string', description: 'CSS class name override.' },
@@ -197,7 +207,7 @@ export function ChoiceFieldPage(): React.ReactElement {
           title: 'Usage',
           children: (
             <CodeSnippet
-              code={`import { ChoiceField } from 'servicenow-sdk-react-component-pack';
+              code={`import { Field } from 'servicenow-sdk-react-component-pack';
 import type { ChoiceEntry } from 'servicenow-sdk-react-component-pack';
 
 // choices come from FieldData.choices returned by RhinoService
@@ -209,7 +219,9 @@ const priorityChoices: ChoiceEntry[] = [
 
 const [priority, setPriority] = useState('');
 
-<ChoiceField
+<Field
+  type="string"
+  isChoiceField={true}
   name="priority"
   label="Priority"
   value={priority}
@@ -218,11 +230,13 @@ const [priority, setPriority] = useState('');
   readOnly={false}
   hasError={priority === ''}
   choices={priorityChoices}
-  onChange={(_field, v, dv) => setPriority(v)}
+  onChange={(_field, v) => setPriority(v)}
 />
 
 // Dependent choices — subcategory filtered by category
-<ChoiceField
+<Field
+  type="string"
+  isChoiceField={true}
   name="subcategory"
   label="Subcategory"
   value={subcategory}
@@ -233,7 +247,7 @@ const [priority, setPriority] = useState('');
   choices={subcategoryChoices}
   dependentOnField="category"
   dependentValue={category}
-  onChange={(_field, v, dv) => setSubcategory(v)}
+  onChange={(_field, v) => setSubcategory(v)}
 />`}
             />
           ),

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTheme } from '../../../npm-package/context/ThemeContext';
-import { TextAreaField } from '../../../npm-package/components/molecules/TextAreaField';
+import { Field } from '../../../npm-package/components/molecules/Field';
 import { Text } from '../../../npm-package/components/atoms/Text';
 import { PropTable } from '../../components/PropTable';
 import { CodeSnippet } from '../../components/CodeSnippet';
@@ -21,49 +21,49 @@ export function TextAreaFieldPage(): React.ReactElement {
 
   return (
     <PageLayout
-      title="TextAreaField"
-      description="Field molecule for multi-line text values — used for string fields with maxLength > 255, or fields of type text/html/translated_text. Composes FieldWrapper with TextArea."
+      title="Field — text type"
+      description="Field molecule rendering a multi-line textarea for text values. Use type='text' (or 'html', 'translated_text'). Also applies when type='string' and maxLength > 255."
       sections={[
         {
           title: 'Preview',
           children: (
             <div style={colStyle}>
               <Text variant="label">States</Text>
-              <TextAreaField
+              <Field
+                type="text"
                 name="desc-normal"
                 label="Description"
                 value={SAMPLE_TEXT}
-                displayValue={SAMPLE_TEXT}
                 mandatory={false}
                 readOnly={false}
                 hasError={false}
                 onChange={() => undefined}
               />
-              <TextAreaField
+              <Field
+                type="text"
                 name="desc-mandatory"
                 label="Description"
                 value=""
-                displayValue=""
                 mandatory={true}
                 readOnly={false}
                 hasError={false}
                 onChange={() => undefined}
               />
-              <TextAreaField
+              <Field
+                type="text"
                 name="desc-error"
                 label="Description"
                 value=""
-                displayValue=""
                 mandatory={true}
                 readOnly={false}
                 hasError={true}
                 onChange={() => undefined}
               />
-              <TextAreaField
+              <Field
+                type="text"
                 name="desc-readonly"
                 label="Description"
                 value={SAMPLE_TEXT}
-                displayValue={SAMPLE_TEXT}
                 mandatory={false}
                 readOnly={true}
                 hasError={false}
@@ -71,11 +71,11 @@ export function TextAreaFieldPage(): React.ReactElement {
               />
 
               <Text variant="label" style={{ marginTop: theme.spacingMd }}>Interactive</Text>
-              <TextAreaField
+              <Field
+                type="text"
                 name="desc-live"
                 label="Description"
                 value={liveValue}
-                displayValue={liveValue}
                 mandatory={false}
                 readOnly={false}
                 hasError={false}
@@ -90,10 +90,10 @@ export function TextAreaFieldPage(): React.ReactElement {
           children: (
             <PropTable
               props={[
+                { name: 'type', type: "string ('text' | 'html' | 'translated_text' | 'string')", required: true, description: "Set to 'text' (or 'html', 'translated_text') to render a textarea. Also applies when type='string' and maxLength > 255." },
                 { name: 'name', type: 'string', required: true, description: 'Field name — used as the textarea id and passed to onChange.' },
                 { name: 'label', type: 'string', required: true, description: 'Label text rendered above the textarea.' },
                 { name: 'value', type: 'string', required: true, description: 'Actual stored value.' },
-                { name: 'displayValue', type: 'string', required: true, description: 'Display value. Equals value for text fields.' },
                 { name: 'mandatory', type: 'boolean', required: true, description: 'When true, renders a red asterisk next to the label.' },
                 { name: 'readOnly', type: 'boolean', required: true, description: 'When true, renders the value as pre-wrapped plain text.' },
                 { name: 'hasError', type: 'boolean', required: true, description: 'When true, applies a red error outline to the field.' },
@@ -109,18 +109,31 @@ export function TextAreaFieldPage(): React.ReactElement {
           title: 'Usage',
           children: (
             <CodeSnippet
-              code={`import { TextAreaField } from 'servicenow-sdk-react-component-pack';
+              code={`import { Field } from 'servicenow-sdk-react-component-pack';
 
 const [description, setDescription] = useState('');
 
-<TextAreaField
+<Field
+  type="text"
   name="description"
   label="Description"
   value={description}
-  displayValue={description}
   mandatory={false}
   readOnly={false}
   hasError={false}
+  onChange={(_field, v) => setDescription(v)}
+/>
+
+// Long string field (maxLength > 255) also renders a textarea
+<Field
+  type="string"
+  name="description"
+  label="Description"
+  value={description}
+  mandatory={false}
+  readOnly={false}
+  hasError={false}
+  maxLength={1000}
   onChange={(_field, v) => setDescription(v)}
 />`}
             />

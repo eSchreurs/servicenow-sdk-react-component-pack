@@ -14,7 +14,7 @@ Use these checklists alongside the reviewer system prompt. Paste the relevant ph
 - [ ] `src/client/component-explorer/` exists with placeholder `index.html`
 - [ ] `src/server/api/` exists and is empty
 - [ ] `src/fluent/` exists and is empty
-- [ ] All service placeholder files exist: `CacheService.ts`, `ServiceNowClient.ts`, `MetadataService.ts`, `RecordService.ts`, `SearchService.ts`, `RhinoService.ts`
+- [ ] All service placeholder files exist: `CacheService.ts`, `ServiceNowClient.ts`, `RhinoService.ts`, `RecordService.ts`, `SearchService.ts`
 - [ ] All context placeholder files exist: `ThemeContext.tsx`, `ServiceNowContext.tsx`
 - [ ] `theme/theme.ts` and `types/index.ts` exist as placeholders
 - [ ] `npm-package/index.ts` exists as placeholder main entry point
@@ -35,7 +35,8 @@ Use these checklists alongside the reviewer system prompt. Paste the relevant ph
 - [ ] `ServiceNowContext.tsx` has `ServiceNowConfig` with `language` defaulting to `'en'`
 - [ ] `ServiceNowProvider` and `useServiceNow()` exported
 - [ ] `types/index.ts` exports all raw API shapes and domain models
-- [ ] `FieldMetadata` interface matches Service Layer Spec Section 2.2 exactly
+- [ ] `FieldData` interface present with: `name`, `label`, `mandatory`, `readOnly`, `maxLength`, `type`, `isChoiceField`, `choices`, optional `reference`, `referenceQual`, `dependentOnField`
+- [ ] `FieldData` does NOT contain `value`, `displayValue`, `useReferenceQualifier`, or `dynamicRefQual`
 - [ ] `ServiceNowError` extends `Error` with `status` and `detail`
 - [ ] No style values hardcoded anywhere outside `theme.ts`
 
@@ -49,22 +50,20 @@ Use these checklists alongside the reviewer system prompt. Paste the relevant ph
 - [ ] `ServiceNowClient` reads `window.g_ck` and attaches `X-UserToken` on POST/PATCH
 - [ ] `ServiceNowClient` unwraps `result` from API responses
 - [ ] `ServiceNowClient` throws `ServiceNowError` for HTTP and API errors
-- [ ] `MetadataService` uses `CacheService.cached()` for all functions
-- [ ] `getTableHierarchy` calls companion app endpoint — NOT `sys_db_object` Table API
-- [ ] `getFieldMetadata` merges rows per-attribute (booleans OR, strings first-non-empty, numbers first-non-zero)
-- [ ] `getFieldMetadata` resolves `referenceDisplayField` via secondary batch query
-- [ ] `getChoices` uses whole-table replacement strategy
-- [ ] `getChoices` accepts `language` parameter defaulting to `'en'`
-- [ ] Cache keys sort both `tables` and `fields` arrays
+- [ ] `RhinoService` exports only `getRecordMetadata(table, fields)` — no `resolveQualifier`, no `searchWithQualifier`
+- [ ] `RhinoService.getRecordMetadata` signature takes `table` and `fields` only — no `sysId`
+- [ ] `RhinoService` cache key is `recordmetadata:{table}:{fields.sort().join(',')}` — no sysId in key
+- [ ] `RhinoService` uses `CacheService.cached()` — no local Map
+- [ ] `RhinoService` returns empty object on error — never throws
 - [ ] `RecordService` never caches
 - [ ] `RecordService` always uses `sysparm_display_value=all`
 - [ ] `SearchService` never caches
-- [ ] `SearchService` always searches on term AND filter combined
-- [ ] `RhinoService` defines `RHINO_ENDPOINT` as named constant
-- [ ] `RhinoService.resolveQualifier` returns empty string on error — never throws
-- [ ] Companion app hierarchy endpoint uses `GlideTableHierarchy`
-- [ ] Companion app Rhino endpoint uses `GlideScopedEvaluator.evaluateScript()` — not `eval()`
-- [ ] Both companion app endpoints require authentication
+- [ ] `SearchService` constructs OR-combined CONTAINS query, ANDs filter onto search conditions
+- [ ] Companion app metadata endpoint (`getRecordMetadata.ts`) accepts `table`, `fields`, `language` — no `sysId`
+- [ ] Companion app handler uses `GlideTableHierarchy` for hierarchy resolution
+- [ ] Companion app handler queries `sys_dictionary_override` and applies overrides correctly
+- [ ] Companion app handler pre-resolves `referenceQual` per qualifier type
+- [ ] Companion app handler returns safe defaults for fields not found in sys_dictionary
 - [ ] No service calls `fetch` directly — all via `ServiceNowClient`
 - [ ] No service contains React, JSX, or hooks
 
@@ -118,12 +117,15 @@ Use these checklists alongside the reviewer system prompt. Paste the relevant ph
 - [ ] `DateTimeField` converts formats correctly in both directions
 - [ ] `DateTimeField` read-only shows human-readable format (DD/MM/YYYY HH:mm)
 - [ ] `ChoiceField` filters dependent choices using stored value — never display value
-- [ ] `ChoiceField` auto-clear of invalid dependent choices handled correctly
 - [ ] `ChoiceField` blank option rule: always shown unless mandatory AND value non-empty
-- [ ] `ReferenceField` calls `RhinoService.resolveQualifier()` only when `isDirty` and qualifier is dynamic/advanced
-- [ ] `ReferenceField` calls `SearchService` with clean qualifier — never dirty
-- [ ] `ReferenceField` info popover uses `RecordService.getRecord()` and `MetadataService.getFieldLabels()`
+- [ ] `ReferenceField` accepts `referenceQual` as a string prop from `FieldData`
+- [ ] `ReferenceField` passes `referenceQual` directly as filter to `SearchService` for all qualifier types
+- [ ] `ReferenceField` ANDs developer-supplied `filter` prop with `referenceQual` when both present
+- [ ] `ReferenceField` info popover uses `RecordService.getRecord()` for record values
+- [ ] `ReferenceField` info popover uses `RhinoService.getRecordMetadata()` for field labels when `previewFields` specified
 - [ ] `ReferenceField` does NOT auto-clear value when filter changes
+- [ ] `ReferenceField` does NOT implement a dirty flag strategy — `referenceQual` is static
+- [ ] `ReferenceField` does NOT call `resolveQualifier` — it does not exist
 - [ ] `ReferenceField` search debounced at 300ms
 - [ ] `ReferenceField` aborts in-flight requests when new search triggers
 - [ ] No molecule calls `ServiceNowClient` directly
@@ -134,19 +136,23 @@ Use these checklists alongside the reviewer system prompt. Paste the relevant ph
 
 - [ ] `Form` uses `useReducer` — not `useState` for form state
 - [ ] All state transitions expressed as dispatched actions
-- [ ] `language` read from `useServiceNow()` and passed to `getChoices()`
-- [ ] Field type resolution follows correct priority order (choices first, then type switch)
+- [ ] `LOAD_SUCCESS` action carries both `metadata: Record<string, FieldData>` and `record: ServiceNowRecord`
+- [ ] `language` read from `useServiceNow()` and passed to `RhinoService.getRecordMetadata()`
+- [ ] Data loading: `RhinoService.getRecordMetadata()` called once per unique table
+- [ ] Data loading: `RecordService.getRecord()` called once per unique `table+sysId`
+- [ ] Both fetches parallelised with `Promise.all`
+- [ ] Field type resolution uses `isChoiceField` boolean first, then type switch — never `choice > 0`
 - [ ] Override rules correct: `effectiveState = databaseValue OR developerOverride`
 - [ ] Validation fires only on save attempt — never on field change
 - [ ] `hasError` passed to failing fields, summary shown at form level
 - [ ] Save payload contains only declared fields — never full record
 - [ ] Invisible fields excluded from validation and save but tracked in state
-- [ ] `isDirty` set on all `ReferenceField` instances on every field change
 - [ ] `onFieldChange` fires AFTER form state is updated
 - [ ] React key per field: `table.sysId.field`
 - [ ] `columns` treated as static — no re-loading on prop change
 - [ ] Partial save failures reported clearly
 - [ ] Form renders single `Spinner` while loading — no partial field rendering
+- [ ] `MetadataService` is NOT used anywhere — `RhinoService.getRecordMetadata()` only
 
 ---
 

@@ -22,6 +22,16 @@ import { BadgePage } from './pages/atoms/BadgePage';
 import { TooltipPage } from './pages/atoms/TooltipPage';
 import { PopoverPage } from './pages/atoms/PopoverPage';
 
+// Molecule pages — Phase 7
+import { StringFieldPage } from './pages/molecules/StringFieldPage';
+import { TextAreaFieldPage } from './pages/molecules/TextAreaFieldPage';
+import { NumberFieldPage } from './pages/molecules/NumberFieldPage';
+import { CheckboxFieldPage } from './pages/molecules/CheckboxFieldPage';
+import { DateTimeFieldPage } from './pages/molecules/DateTimeFieldPage';
+import { ChoiceFieldPage } from './pages/molecules/ChoiceFieldPage';
+import { ReferenceFieldPage } from './pages/molecules/ReferenceFieldPage';
+import { SearchBarPage } from './pages/molecules/SearchBarPage';
+
 // ---------------------------------------------------------------------------
 // Nav structure — add new pages here as phases are completed
 // ---------------------------------------------------------------------------
@@ -68,8 +78,19 @@ const NAV_GROUPS: NavGroup[] = [
       { key: 'popover', label: 'Popover' },
     ],
   },
-  // Phase 7 — Molecules (to be added)
-  // Phase 7 — Molecules (to be added)
+  {
+    title: 'Molecules — Fields',
+    items: [
+      { key: 'string-field', label: 'StringField' },
+      { key: 'text-area-field', label: 'TextAreaField' },
+      { key: 'number-field', label: 'NumberField' },
+      { key: 'checkbox-field', label: 'CheckboxField' },
+      { key: 'date-time-field', label: 'DateTimeField' },
+      { key: 'choice-field', label: 'ChoiceField' },
+      { key: 'reference-field', label: 'ReferenceField' },
+      { key: 'search-bar', label: 'SearchBar' },
+    ],
+  },
   // Phase 9 — Organisms (to be added)
 ];
 
@@ -91,6 +112,15 @@ const PAGE_MAP: Record<PageKey, React.ReactElement> = {
   'badge': <BadgePage />,
   'tooltip': <TooltipPage />,
   'popover': <PopoverPage />,
+  // Molecule pages
+  'string-field': <StringFieldPage />,
+  'text-area-field': <TextAreaFieldPage />,
+  'number-field': <NumberFieldPage />,
+  'checkbox-field': <CheckboxFieldPage />,
+  'date-time-field': <DateTimeFieldPage />,
+  'choice-field': <ChoiceFieldPage />,
+  'reference-field': <ReferenceFieldPage />,
+  'search-bar': <SearchBarPage />,
 };
 
 const DEFAULT_PAGE: PageKey = 'text';

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useTheme } from '../../../npm-package/context/ThemeContext';
 import { ReferenceInput, ReferenceResult } from '../../../npm-package/components/atoms/ReferenceInput';
+import { Popover } from '../../../npm-package/components/atoms/Popover';
 import { Text } from '../../../npm-package/components/atoms/Text';
 import { PropTable } from '../../components/PropTable';
 import { CodeSnippet } from '../../components/CodeSnippet';
@@ -21,6 +22,10 @@ function InteractiveDemo(): React.ReactElement {
   const [searchResults, setSearchResults] = useState<ReferenceResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchTimerId, setSearchTimerId] = useState<number | null>(null);
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  const anchorRef = useRef<HTMLDivElement>(null);
+
+  const selectedRecord = MOCK_RESULTS.find((r) => r.sysId === value) ?? null;
 
   function handleSearchTermChange(term: string) {
     if (searchTimerId !== null) {
@@ -46,30 +51,77 @@ function InteractiveDemo(): React.ReactElement {
     setValue(sysId);
     setDisplayValue(dv);
     setSearchResults([]);
+    setPopoverOpen(false);
   }
 
   function handleClear() {
     setValue('');
     setDisplayValue('');
     setSearchResults([]);
+    setPopoverOpen(false);
   }
+
+  const fieldRowStyle: React.CSSProperties = {
+    display: 'grid',
+    gridTemplateColumns: '80px 1fr',
+    gap: theme.spacingXs,
+    paddingBottom: theme.spacingXs,
+    borderBottom: `${theme.borderWidth} solid ${theme.colorBorder}`,
+  };
+
+  const fieldLabelStyle: React.CSSProperties = {
+    fontSize: theme.fontSizeSmall,
+    color: theme.colorTextMuted,
+    fontFamily: theme.fontFamily,
+    fontWeight: theme.fontWeightMedium,
+  };
+
+  const fieldValueStyle: React.CSSProperties = {
+    fontSize: theme.fontSizeSmall,
+    color: theme.colorText,
+    fontFamily: theme.fontFamily,
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: theme.spacingSm }}>
-      <ReferenceInput
-        id="ri-interactive"
-        value={value}
-        displayValue={displayValue}
-        onChange={handleChange}
-        onSearchTermChange={handleSearchTermChange}
-        onClear={handleClear}
-        onInfoClick={() => alert(`Info clicked for sys_id: ${value}`)}
-        searchResults={searchResults}
-        isSearching={isSearching}
-        placeholder="Type a name (e.g. 'ab')…"
-      />
+      <div ref={anchorRef}>
+        <ReferenceInput
+          id="ri-interactive"
+          value={value}
+          displayValue={displayValue}
+          onChange={handleChange}
+          onSearchTermChange={handleSearchTermChange}
+          onClear={handleClear}
+          onInfoClick={() => setPopoverOpen((o) => !o)}
+          searchResults={searchResults}
+          isSearching={isSearching}
+          placeholder="Type a name (e.g. 'ab')…"
+        />
+      </div>
+      <Popover
+        isOpen={popoverOpen}
+        onClose={() => setPopoverOpen(false)}
+        title={selectedRecord?.displayValue ?? 'Record info'}
+        anchorRef={anchorRef as unknown as React.RefObject<HTMLElement>}
+      >
+        {selectedRecord ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: theme.spacingSm }}>
+            {[
+              { label: 'sys_id', value: selectedRecord.sysId },
+              ...selectedRecord.columns.map((col) => ({ label: col.field, value: col.value })),
+            ].map(({ label, value: val }) => (
+              <div key={label} style={fieldRowStyle}>
+                <span style={fieldLabelStyle}>{label}</span>
+                <span style={fieldValueStyle}>{val}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <Text variant="body">No record selected.</Text>
+        )}
+      </Popover>
       <Text variant="caption">
-        {value ? `Selected: "${displayValue}" (sys_id: ${value})` : 'No selection'}
+        {value ? `Selected: "${displayValue}" (sys_id: ${value})` : 'No selection — click ⓘ after selecting a record'}
       </Text>
     </div>
   );

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { FieldWrapper } from './_internal/FieldWrapper';
+import { snToInput, inputToSn, formatReadOnly, DateMode } from './_internal/dateHelpers';
 import { Input } from './Input';
 import { Checkbox } from './Checkbox';
 import { Dropdown } from './Dropdown';
@@ -28,15 +29,15 @@ export interface FieldProps {
   style?: React.CSSProperties;
   className?: string;
 
-  // ChoiceField props
+  // Choice props
   choices?: ChoiceEntry[];
   dependentOnField?: string;
   dependentValue?: string;
 
-  // DateTimeField props
-  mode?: 'datetime' | 'date' | 'time';
+  // DateTime props
+  mode?: DateMode;
 
-  // ReferenceField props
+  // Reference props
   reference?: string;
   referenceQual?: string;
   filter?: string;
@@ -45,7 +46,7 @@ export interface FieldProps {
   table?: string;
   sysId?: string;
 
-  // isChoiceField flag from FieldData — takes priority in type resolution
+  // isChoiceField flag — takes priority in type resolution
   isChoiceField?: boolean;
 }
 
@@ -53,115 +54,26 @@ export interface FieldProps {
 // Type resolution
 // ---------------------------------------------------------------------------
 
-type InputKind =
-  | 'textinput'
-  | 'number'
-  | 'textarea'
-  | 'checkbox'
-  | 'choice'
-  | 'reference'
-  | 'datetime'
-  | 'date'
-  | 'time';
+type InputKind = 'textinput' | 'number' | 'textarea' | 'checkbox' | 'choice' | 'reference' | 'datetime' | 'date' | 'time';
 
-function resolveKind(
-  type: string,
-  isChoiceField: boolean | undefined,
-  maxLength: number | undefined,
-): InputKind {
+function resolveKind(type: string, isChoiceField: boolean | undefined, maxLength: number | undefined): InputKind {
   if (isChoiceField) return 'choice';
   switch (type) {
-    case 'string':
-      return maxLength !== undefined && maxLength > 255 ? 'textarea' : 'textinput';
+    case 'string':         return maxLength !== undefined && maxLength > 255 ? 'textarea' : 'textinput';
     case 'text':
     case 'html':
-    case 'translated_text':
-      return 'textarea';
+    case 'translated_text': return 'textarea';
     case 'integer':
     case 'decimal':
     case 'float':
-    case 'currency':
-      return 'number';
-    case 'boolean':
-      return 'checkbox';
-    case 'reference':
-      return 'reference';
-    case 'glide_date_time':
-      return 'datetime';
-    case 'glide_date':
-      return 'date';
-    case 'glide_time':
-      return 'time';
-    default:
-      return 'textinput';
+    case 'currency':       return 'number';
+    case 'boolean':        return 'checkbox';
+    case 'reference':      return 'reference';
+    case 'glide_date_time': return 'datetime';
+    case 'glide_date':     return 'date';
+    case 'glide_time':     return 'time';
+    default:               return 'textinput';
   }
-}
-
-// ---------------------------------------------------------------------------
-// DateTime format helpers
-// ---------------------------------------------------------------------------
-
-function snToInputDatetime(sn: string): string {
-  if (!sn) return '';
-  const match = sn.match(/^(\d{4}-\d{2}-\d{2})\s(\d{2}:\d{2})/);
-  if (match) return `${match[1]}T${match[2]}`;
-  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(sn)) return sn.slice(0, 16);
-  return sn;
-}
-
-function snToInputDate(sn: string): string {
-  if (!sn) return '';
-  const match = sn.match(/^(\d{4}-\d{2}-\d{2})/);
-  return match ? match[1] : sn;
-}
-
-function snToInputTime(sn: string): string {
-  if (!sn) return '';
-  const match = sn.match(/^(\d{2}:\d{2})/);
-  return match ? match[1] : sn;
-}
-
-function inputDatetimeToSn(input: string): string {
-  if (!input) return '';
-  const match = input.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/);
-  if (match) return `${match[1]} ${match[2]}:00`;
-  return input;
-}
-
-function inputDateToSn(input: string): string {
-  return input;
-}
-
-function inputTimeToSn(input: string): string {
-  if (!input) return '';
-  if (/^\d{2}:\d{2}$/.test(input)) return `${input}:00`;
-  return input;
-}
-
-function formatDatetimeReadOnly(sn: string): string {
-  if (!sn) return '';
-  const match = sn.match(/^(\d{4})-(\d{2})-(\d{2})[\sT](\d{2}):(\d{2})/);
-  if (match) {
-    const [, yyyy, mm, dd, hh, min] = match;
-    return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
-  }
-  return sn;
-}
-
-function formatDateReadOnly(sn: string): string {
-  if (!sn) return '';
-  const match = sn.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (match) {
-    const [, yyyy, mm, dd] = match;
-    return `${dd}/${mm}/${yyyy}`;
-  }
-  return sn;
-}
-
-function formatTimeReadOnly(sn: string): string {
-  if (!sn) return '';
-  const match = sn.match(/^(\d{2}:\d{2})/);
-  return match ? match[1] : sn;
 }
 
 // ---------------------------------------------------------------------------
@@ -169,69 +81,36 @@ function formatTimeReadOnly(sn: string): string {
 // ---------------------------------------------------------------------------
 
 function humanise(fieldName: string): string {
-  return fieldName
-    .split('_')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+  return fieldName.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
 function buildEffectiveFilter(referenceQual?: string, filter?: string): string | undefined {
   if (referenceQual && filter) return `(${referenceQual})^${filter}`;
-  if (referenceQual) return referenceQual;
-  if (filter) return filter;
-  return undefined;
+  return referenceQual ?? filter;
 }
 
-interface PopoverRow {
-  label: string;
-  displayValue: string;
-}
+interface PopoverRow { label: string; displayValue: string; }
 
 // ---------------------------------------------------------------------------
 // Private ReferenceField sub-component — state only lives when kind=reference
 // ---------------------------------------------------------------------------
 
-interface ReferenceFieldInternalProps {
-  name: string;
-  label: string;
-  mandatory: boolean;
-  readOnly: boolean;
-  hasError: boolean;
-  value: string;
-  displayValue: string;
-  onChange: (field: string, value: string, displayValue: string) => void;
-  reference?: string;
-  referenceQual?: string;
-  filter?: string;
-  searchFields?: string[];
-  previewFields?: string[];
-  style?: React.CSSProperties;
-  className?: string;
-}
+type ReferenceFieldInternalProps = Pick<FieldProps,
+  'name' | 'label' | 'mandatory' | 'readOnly' | 'hasError' | 'value' |
+  'displayValue' | 'onChange' | 'reference' | 'referenceQual' | 'filter' |
+  'searchFields' | 'previewFields' | 'style' | 'className'
+>;
 
 function ReferenceField({
-  name,
-  label,
-  mandatory,
-  readOnly,
-  hasError,
-  value,
-  displayValue,
-  onChange,
-  reference,
-  referenceQual,
-  filter,
-  searchFields,
-  previewFields,
-  style,
-  className,
+  name, label, mandatory, readOnly, hasError, value, displayValue = '',
+  onChange, reference, referenceQual, filter, searchFields, previewFields,
+  style, className,
 }: ReferenceFieldInternalProps): React.ReactElement {
   const theme = useTheme();
 
   const [searchResults, setSearchResults] = useState<ReferenceSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | undefined>(undefined);
-
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [popoverRows, setPopoverRows] = useState<PopoverRow[]>([]);
   const [popoverLoading, setPopoverLoading] = useState(false);
@@ -241,82 +120,49 @@ function ReferenceField({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const anchorRef = useRef<HTMLDivElement>(null);
 
-  // When filter changes: cancel in-flight search, clear results.
-  useEffect(() => {
+  const clearSearch = () => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     searchGenRef.current += 1;
     setSearchResults([]);
     setIsSearching(false);
     setSearchError(undefined);
-  }, [filter]);
+  };
 
-  // Clean up debounce timer on unmount
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, []);
+  useEffect(() => { clearSearch(); }, [filter]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleSearchTermChange = useCallback(
-    (term: string) => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
+  useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
 
-      if (term.length < 2) {
-        searchGenRef.current += 1;
-        setSearchResults([]);
-        setIsSearching(false);
-        setSearchError(undefined);
-        return;
-      }
+  const handleSearchTermChange = useCallback((term: string) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (term.length < 2) { clearSearch(); return; }
 
-      setIsSearching(true);
-      setSearchError(undefined);
+    setIsSearching(true);
+    setSearchError(undefined);
+    const effectiveFilter = buildEffectiveFilter(referenceQual, filter);
 
-      const effectiveFilter = buildEffectiveFilter(referenceQual, filter);
-
-      debounceRef.current = setTimeout(async () => {
-        const gen = ++searchGenRef.current;
-        try {
-          const results = await SearchService.searchRecords(
-            reference ?? '',
-            term,
-            searchFields,
-            15,
-            effectiveFilter,
-          );
-          if (gen === searchGenRef.current) {
-            setSearchResults(results);
-            setIsSearching(false);
-          }
-        } catch (e) {
-          if (gen === searchGenRef.current) {
-            setSearchError(e instanceof Error ? e.message : 'Search failed');
-            setIsSearching(false);
-          }
+    debounceRef.current = setTimeout(async () => {
+      const gen = ++searchGenRef.current;
+      try {
+        const results = await SearchService.searchRecords(reference ?? '', term, searchFields, 15, effectiveFilter);
+        if (gen === searchGenRef.current) { setSearchResults(results); setIsSearching(false); }
+      } catch (e) {
+        if (gen === searchGenRef.current) {
+          setSearchError(e instanceof Error ? e.message : 'Search failed');
+          setIsSearching(false);
         }
-      }, 300);
-    },
-    [reference, referenceQual, filter, searchFields],
-  );
+      }
+    }, 300);
+  }, [reference, referenceQual, filter, searchFields]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleReferenceChange = useCallback(
-    (sysId: string, dv: string) => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      searchGenRef.current += 1;
-      setSearchResults([]);
-      setIsSearching(false);
-      onChange(name, sysId, dv);
-    },
-    [name, onChange],
-  );
+  const handleReferenceChange = useCallback((sysId: string, dv: string) => {
+    clearSearch();
+    onChange(name, sysId, dv);
+  }, [name, onChange]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleReferenceClear = useCallback(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    searchGenRef.current += 1;
-    setSearchResults([]);
-    setIsSearching(false);
+    clearSearch();
     onChange(name, '', '');
-  }, [name, onChange]);
+  }, [name, onChange]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleInfoClick = useCallback(async () => {
     if (!value) return;
@@ -324,29 +170,23 @@ function ReferenceField({
     setPopoverLoading(true);
     setPopoverError(undefined);
     setPopoverRows([]);
-
     try {
       if (previewFields && previewFields.length > 0) {
         const [record, metadata] = await Promise.all([
           RecordService.getRecord(reference ?? '', value, previewFields),
           RhinoService.getRecordMetadata(reference ?? '', previewFields),
         ]);
-        const rows: PopoverRow[] = previewFields.map((field) => {
-          const fieldMeta: FieldData | undefined = metadata[field];
-          const fieldLabel = fieldMeta ? fieldMeta.label : humanise(field);
-          const fieldValue = record[field] ? record[field].displayValue : '';
-          return { label: fieldLabel, displayValue: fieldValue };
-        });
-        setPopoverRows(rows);
+        setPopoverRows(previewFields.map((field) => {
+          const meta: FieldData | undefined = metadata[field];
+          return { label: meta ? meta.label : humanise(field), displayValue: record[field]?.displayValue ?? '' };
+        }));
       } else {
         const record: ServiceNowRecord = await RecordService.getRecord(reference ?? '', value);
-        const rows: PopoverRow[] = Object.keys(record)
-          .filter((field) => !field.startsWith('sys_') && record[field].displayValue !== '')
-          .map((field) => ({
-            label: humanise(field),
-            displayValue: record[field].displayValue,
-          }));
-        setPopoverRows(rows);
+        setPopoverRows(
+          Object.keys(record)
+            .filter((f) => !f.startsWith('sys_') && record[f].displayValue !== '')
+            .map((f) => ({ label: humanise(f), displayValue: record[f].displayValue })),
+        );
       }
     } catch (e) {
       setPopoverError(e instanceof Error ? e.message : 'Failed to load record');
@@ -362,31 +202,18 @@ function ReferenceField({
   ) : (
     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: theme.fontSizeSmall }}>
       <tbody>
-        {popoverRows.map((row) => (
-          <tr key={row.label}>
-            <td style={{
-              padding: `${theme.spacingXs} ${theme.spacingSm} ${theme.spacingXs} 0`,
-              color: theme.colorTextMuted,
-              fontWeight: theme.fontWeightMedium,
-              whiteSpace: 'nowrap',
-              verticalAlign: 'top',
-            }}>
-              {row.label}
-            </td>
-            <td style={{
-              padding: `${theme.spacingXs} 0`,
-              color: theme.colorText,
-              wordBreak: 'break-word',
-            }}>
-              {row.displayValue}
-            </td>
-          </tr>
-        ))}
-        {popoverRows.length === 0 && (
-          <tr>
-            <td style={{ color: theme.colorTextMuted }}>No fields to display</td>
-          </tr>
-        )}
+        {popoverRows.length === 0
+          ? <tr><td style={{ color: theme.colorTextMuted }}>No fields to display</td></tr>
+          : popoverRows.map((row) => (
+            <tr key={row.label}>
+              <td style={{ padding: `${theme.spacingXs} ${theme.spacingSm} ${theme.spacingXs} 0`, color: theme.colorTextMuted, fontWeight: theme.fontWeightMedium, whiteSpace: 'nowrap', verticalAlign: 'top' }}>
+                {row.label}
+              </td>
+              <td style={{ padding: `${theme.spacingXs} 0`, color: theme.colorText, wordBreak: 'break-word' }}>
+                {row.displayValue}
+              </td>
+            </tr>
+          ))}
       </tbody>
     </table>
   );
@@ -395,28 +222,71 @@ function ReferenceField({
     <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
       <div ref={anchorRef}>
         <ReferenceInput
-          id={name}
-          value={value}
-          displayValue={displayValue}
-          onChange={handleReferenceChange}
-          onSearchTermChange={handleSearchTermChange}
-          onClear={handleReferenceClear}
-          onInfoClick={handleInfoClick}
-          searchResults={searchResults}
-          isSearching={isSearching}
-          searchError={searchError}
-          readOnly={readOnly}
-          hasError={hasError}
+          id={name} value={value} displayValue={displayValue}
+          onChange={handleReferenceChange} onSearchTermChange={handleSearchTermChange}
+          onClear={handleReferenceClear} onInfoClick={handleInfoClick}
+          searchResults={searchResults} isSearching={isSearching} searchError={searchError}
+          readOnly={readOnly} hasError={hasError}
         />
       </div>
-      <Popover
-        isOpen={popoverOpen}
-        onClose={() => setPopoverOpen(false)}
-        title={displayValue || label}
-        anchorRef={anchorRef as React.RefObject<HTMLElement>}
-      >
+      <Popover isOpen={popoverOpen} onClose={() => setPopoverOpen(false)} title={displayValue || label} anchorRef={anchorRef as React.RefObject<HTMLElement>}>
         {popoverContent}
       </Popover>
+    </FieldWrapper>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Private DateField sub-component
+// ---------------------------------------------------------------------------
+
+type DateFieldInternalProps = Pick<FieldProps,
+  'name' | 'label' | 'mandatory' | 'readOnly' | 'hasError' | 'value' |
+  'onChange' | 'mode' | 'style' | 'className'
+> & { dateKind: 'datetime' | 'date' | 'time' };
+
+function DateField({
+  name, label, mandatory, readOnly, hasError, value, onChange, mode, dateKind, style, className,
+}: DateFieldInternalProps): React.ReactElement {
+  const theme = useTheme();
+  const dateMode: DateMode = mode ?? dateKind;
+
+  const inputStyle: React.CSSProperties = {
+    display: 'block', width: '100%', height: theme.inputHeight,
+    padding: `0 ${theme.inputPaddingHorizontal}`,
+    fontFamily: theme.fontFamily, fontSize: theme.fontSizeBase,
+    color: theme.colorText, backgroundColor: theme.inputBackgroundColor,
+    border: `${theme.borderWidth} solid ${theme.colorBorder}`,
+    borderRadius: theme.borderRadius, boxSizing: 'border-box',
+    outline: 'none', transition: `border-color ${theme.transitionSpeed}`,
+  };
+
+  const readOnlySpanStyle: React.CSSProperties = {
+    display: 'block', fontFamily: theme.fontFamily, fontSize: theme.fontSizeBase,
+    color: theme.colorText, lineHeight: theme.lineHeightBase,
+    minHeight: theme.inputHeight, padding: `0 ${theme.inputPaddingHorizontal}`,
+    alignContent: 'center',
+  };
+
+  if (readOnly) {
+    return (
+      <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
+        <span id={name} style={readOnlySpanStyle}>{formatReadOnly(value, dateMode)}</span>
+      </FieldWrapper>
+    );
+  }
+
+  const inputType = dateMode === 'datetime' ? 'datetime-local' : dateMode;
+
+  return (
+    <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
+      <input
+        id={name} type={inputType} value={snToInput(value, dateMode)}
+        onChange={(e) => onChange(name, inputToSn(e.target.value, dateMode), inputToSn(e.target.value, dateMode))}
+        required={mandatory} style={inputStyle}
+        onFocus={(e) => { e.currentTarget.style.borderColor = theme.colorBorderFocus; }}
+        onBlur={(e) => { e.currentTarget.style.borderColor = theme.colorBorder; }}
+      />
     </FieldWrapper>
   );
 }
@@ -426,55 +296,31 @@ function ReferenceField({
 // ---------------------------------------------------------------------------
 
 export function Field({
-  name,
-  label,
-  type,
-  value,
-  displayValue = '',
-  mandatory,
-  readOnly,
-  hasError,
-  onChange,
-  maxLength,
-  style,
-  className,
-  choices,
-  dependentValue,
-  mode,
-  reference,
-  referenceQual,
-  filter,
-  searchFields,
-  previewFields,
-  isChoiceField,
+  name, label, type, value, displayValue = '', mandatory, readOnly, hasError,
+  onChange, maxLength, style, className, choices, dependentValue, mode,
+  reference, referenceQual, filter, searchFields, previewFields, isChoiceField,
 }: FieldProps): React.ReactElement {
   const theme = useTheme();
 
   const kind = resolveKind(type, isChoiceField, maxLength);
 
-  // ---------------------------------------------------------------------------
-  // Shared input style — passed to all atoms and applied to all native inputs.
-  // All field types use this as the base so styling is consistent.
-  // ---------------------------------------------------------------------------
+  // Shorthand to avoid repeating the 6 FieldWrapper props on every return.
+  const wrap = (children: React.ReactNode) => (
+    <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
+      {children}
+    </FieldWrapper>
+  );
 
   const inputStyle: React.CSSProperties = {
-    display: 'block',
-    width: '100%',
-    height: theme.inputHeight,
+    display: 'block', width: '100%', height: theme.inputHeight,
     padding: `0 ${theme.inputPaddingHorizontal}`,
-    fontFamily: theme.fontFamily,
-    fontSize: theme.fontSizeBase,
-    color: theme.colorText,
-    backgroundColor: theme.inputBackgroundColor,
+    fontFamily: theme.fontFamily, fontSize: theme.fontSizeBase,
+    color: theme.colorText, backgroundColor: theme.inputBackgroundColor,
     border: `${theme.borderWidth} solid ${theme.colorBorder}`,
-    borderRadius: theme.borderRadius,
-    boxSizing: 'border-box',
-    outline: 'none',
-    transition: `border-color ${theme.transitionSpeed}`,
+    borderRadius: theme.borderRadius, boxSizing: 'border-box',
+    outline: 'none', transition: `border-color ${theme.transitionSpeed}`,
   };
 
-  // Textarea variant: same base, overrides for multi-line layout.
-  // No separate border definition — border comes from inputStyle above.
   const textareaStyle: React.CSSProperties = {
     ...inputStyle,
     height: 'auto',
@@ -482,234 +328,91 @@ export function Field({
     resize: 'vertical',
   };
 
-  // ---------------------------------------------------------------------------
-  // Read-only span style (shared across text-like kinds)
-  // ---------------------------------------------------------------------------
-
   const readOnlySpanStyle: React.CSSProperties = {
-    display: 'block',
-    fontFamily: theme.fontFamily,
-    fontSize: theme.fontSizeBase,
-    color: theme.colorText,
-    lineHeight: theme.lineHeightBase,
-    minHeight: theme.inputHeight,
-    padding: `0 ${theme.inputPaddingHorizontal}`,
+    display: 'block', fontFamily: theme.fontFamily, fontSize: theme.fontSizeBase,
+    color: theme.colorText, lineHeight: theme.lineHeightBase,
+    minHeight: theme.inputHeight, padding: `0 ${theme.inputPaddingHorizontal}`,
     alignContent: 'center',
   };
 
-  // ---------------------------------------------------------------------------
-  // Disabled checkbox style (used for boolean readOnly)
-  // ---------------------------------------------------------------------------
-
-  const disabledCheckboxContainerStyle: React.CSSProperties = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    height: theme.inputHeight,
-  };
-
-  const disabledCheckboxStyle: React.CSSProperties = {
-    width: '1rem',
-    height: '1rem',
-    cursor: 'default',
-    accentColor: theme.colorPrimary,
-  };
-
-  // ---------------------------------------------------------------------------
-  // Render
-  // ---------------------------------------------------------------------------
-
-  if (kind === 'textinput') {
-    if (readOnly) {
-      return (
-        <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
-          <span id={name} style={readOnlySpanStyle}>{value}</span>
-        </FieldWrapper>
-      );
-    }
-    return (
-      <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
-        <Input id={name} value={value} onChange={(v) => onChange(name, v, v)} style={inputStyle} />
-      </FieldWrapper>
+  // --- text / number ---
+  if (kind === 'textinput' || kind === 'number') {
+    if (readOnly) return wrap(<span id={name} style={readOnlySpanStyle}>{value}</span>);
+    return wrap(
+      <Input id={name} value={value} onChange={(v) => onChange(name, v, v)}
+        type={kind === 'number' ? 'number' : 'text'} style={inputStyle} />,
     );
   }
 
-  if (kind === 'number') {
-    if (readOnly) {
-      return (
-        <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
-          <span id={name} style={readOnlySpanStyle}>{value}</span>
-        </FieldWrapper>
-      );
-    }
-    return (
-      <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
-        <Input id={name} value={value} onChange={(v) => onChange(name, v, v)} type="number" style={inputStyle} />
-      </FieldWrapper>
-    );
-  }
-
+  // --- textarea ---
   if (kind === 'textarea') {
-    if (readOnly) {
-      return (
-        <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
-          <span id={name} style={{ ...readOnlySpanStyle, whiteSpace: 'pre-wrap', alignContent: undefined }}>{value}</span>
-        </FieldWrapper>
-      );
-    }
-    return (
-      <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
-        <textarea
-          id={name}
-          value={value}
-          onChange={(e) => onChange(name, e.target.value, e.target.value)}
-          maxLength={maxLength}
-          rows={4}
-          style={textareaStyle}
-          onFocus={(e) => { e.currentTarget.style.borderColor = theme.colorBorderFocus; }}
-          onBlur={(e) => { e.currentTarget.style.borderColor = theme.colorBorder; }}
-        />
-      </FieldWrapper>
+    if (readOnly) return wrap(<span id={name} style={{ ...readOnlySpanStyle, whiteSpace: 'pre-wrap', alignContent: undefined }}>{value}</span>);
+    return wrap(
+      <textarea id={name} value={value} rows={4} maxLength={maxLength} style={textareaStyle}
+        onChange={(e) => onChange(name, e.target.value, e.target.value)}
+        onFocus={(e) => { e.currentTarget.style.borderColor = theme.colorBorderFocus; }}
+        onBlur={(e) => { e.currentTarget.style.borderColor = theme.colorBorder; }}
+      />,
     );
   }
 
+  // --- checkbox ---
   if (kind === 'checkbox') {
     const boolValue = value === 'true';
     if (readOnly) {
-      return (
-        <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
-          <div style={disabledCheckboxContainerStyle}>
-            <input
-              id={name}
-              type="checkbox"
-              checked={boolValue}
-              disabled
-              onChange={() => undefined}
-              style={disabledCheckboxStyle}
-            />
-          </div>
-        </FieldWrapper>
+      return wrap(
+        <div style={{ display: 'inline-flex', alignItems: 'center', height: theme.inputHeight }}>
+          <input id={name} type="checkbox" checked={boolValue} disabled onChange={() => undefined}
+            style={{ width: '1rem', height: '1rem', cursor: 'default', accentColor: theme.colorPrimary }} />
+        </div>,
       );
     }
-    return (
-      <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
-        <Checkbox
-          id={name}
-          value={boolValue}
-          onChange={(checked) => {
-            const str = checked ? 'true' : 'false';
-            onChange(name, str, str);
-          }}
-        />
-      </FieldWrapper>
+    return wrap(
+      <Checkbox id={name} value={boolValue}
+        onChange={(checked) => { const s = checked ? 'true' : 'false'; onChange(name, s, s); }} />,
     );
   }
 
+  // --- choice ---
   if (kind === 'choice') {
-    const safeChoices = choices ?? [];
-    const visibleChoices = safeChoices.filter((c) => {
-      if (!c.dependentValue) return true;
-      return c.dependentValue === dependentValue;
-    });
+    const visibleChoices = (choices ?? []).filter((c) => !c.dependentValue || c.dependentValue === dependentValue);
     const options = visibleChoices.map((c) => ({ value: c.value, label: c.label }));
-
     if (readOnly) {
-      const match = visibleChoices.find((c) => c.value === value);
-      const selectedLabel = match ? match.label : value;
-      return (
-        <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
-          <span id={name} style={readOnlySpanStyle}>{selectedLabel}</span>
-        </FieldWrapper>
-      );
+      const selectedLabel = visibleChoices.find((c) => c.value === value)?.label ?? value;
+      return wrap(<span id={name} style={readOnlySpanStyle}>{selectedLabel}</span>);
     }
-
-    const showBlank = !(mandatory && value !== '');
-
-    function handleChoiceChange(selected: string): void {
-      const choiceMatch = visibleChoices.find((c) => c.value === selected);
-      const selectedLabel = choiceMatch ? choiceMatch.label : '';
-      onChange(name, selected, selectedLabel);
-    }
-
-    return (
-      <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
-        <Dropdown
-          id={name}
-          value={value}
-          options={options}
-          onChange={handleChoiceChange}
-          style={inputStyle}
-          placeholder={showBlank ? '' : undefined}
-        />
-      </FieldWrapper>
+    return wrap(
+      <Dropdown
+        id={name} value={value} options={options} style={inputStyle}
+        onChange={(selected) => {
+          const match = visibleChoices.find((c) => c.value === selected);
+          onChange(name, selected, match?.label ?? '');
+        }}
+        placeholder={!(mandatory && value !== '') ? '' : undefined}
+      />,
     );
   }
 
+  // --- reference ---
   if (kind === 'reference') {
     return (
       <ReferenceField
-        name={name}
-        label={label}
-        mandatory={mandatory}
-        readOnly={readOnly}
-        hasError={hasError}
-        value={value}
-        displayValue={displayValue}
-        onChange={onChange}
-        reference={reference}
-        referenceQual={referenceQual}
-        filter={filter}
-        searchFields={searchFields}
-        previewFields={previewFields}
-        style={style}
-        className={className}
+        name={name} label={label} mandatory={mandatory} readOnly={readOnly} hasError={hasError}
+        value={value} displayValue={displayValue} onChange={onChange}
+        reference={reference} referenceQual={referenceQual} filter={filter}
+        searchFields={searchFields} previewFields={previewFields}
+        style={style} className={className}
       />
     );
   }
 
-  // Date kinds: 'datetime' | 'date' | 'time'
-  const dateMode = mode ?? (kind as 'datetime' | 'date' | 'time');
-
-  let inputValue: string;
-  if (dateMode === 'datetime') inputValue = snToInputDatetime(value);
-  else if (dateMode === 'date') inputValue = snToInputDate(value);
-  else inputValue = snToInputTime(value);
-
-  if (readOnly) {
-    let displayText: string;
-    if (dateMode === 'datetime') displayText = formatDatetimeReadOnly(value);
-    else if (dateMode === 'date') displayText = formatDateReadOnly(value);
-    else displayText = formatTimeReadOnly(value);
-
-    return (
-      <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
-        <span id={name} style={readOnlySpanStyle}>{displayText}</span>
-      </FieldWrapper>
-    );
-  }
-
-  const inputType = dateMode === 'datetime' ? 'datetime-local' : dateMode;
-
-  function handleDateChange(e: React.ChangeEvent<HTMLInputElement>): void {
-    const raw = e.target.value;
-    let snValue: string;
-    if (dateMode === 'datetime') snValue = inputDatetimeToSn(raw);
-    else if (dateMode === 'date') snValue = inputDateToSn(raw);
-    else snValue = inputTimeToSn(raw);
-    onChange(name, snValue, snValue);
-  }
-
+  // --- datetime / date / time ---
   return (
-    <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
-      <input
-        id={name}
-        type={inputType}
-        value={inputValue}
-        onChange={handleDateChange}
-        required={mandatory}
-        style={inputStyle}
-        onFocus={(e) => { e.currentTarget.style.borderColor = theme.colorBorderFocus; }}
-        onBlur={(e) => { e.currentTarget.style.borderColor = theme.colorBorder; }}
-      />
-    </FieldWrapper>
+    <DateField
+      name={name} label={label} mandatory={mandatory} readOnly={readOnly} hasError={hasError}
+      value={value} onChange={onChange} mode={mode}
+      dateKind={kind as 'datetime' | 'date' | 'time'}
+      style={style} className={className}
+    />
   );
 }

@@ -145,7 +145,7 @@ function NavItem({ label, isSelected, onClick }: NavItemProps): React.ReactEleme
     cursor: 'pointer',
     transition: `background ${theme.transitionSpeed}`,
     borderRadius: theme.borderRadiusSm,
-    margin: `1px ${theme.spacingXs}`,
+    margin: '1px 0',
     boxSizing: 'border-box',
   };
 

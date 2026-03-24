@@ -73,9 +73,16 @@ export function process(request: any, response: any): void {
         overrideGR.addQuery('element', 'IN', fields.join(','));
         overrideGR.query();
  
+        // Track the most-specific table whose override has been applied per field.
+        var overrideApplied: Record<string, string> = {};
+
         while (overrideGR.next()) {
             var ofn: string = overrideGR.getValue('element') || '';
             if (!ofn || !baseRows[ofn]) continue;
+            var otn: string = overrideGR.getValue('name') || '';
+            var prevTable = overrideApplied[ofn];
+            if (prevTable && tableList.indexOf(otn) >= tableList.indexOf(prevTable)) continue;
+            overrideApplied[ofn] = otn;
             var row = baseRows[ofn];
             if (parseBool(overrideGR.getValue('mandatory_override'))) {
                 row.mandatory = parseBool(overrideGR.getValue('mandatory'));

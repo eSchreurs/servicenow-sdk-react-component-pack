@@ -26,29 +26,26 @@ function normaliseFieldData(raw: any): FieldData {
 }
  
 // Fetches static field metadata for all requested fields in one round-trip.
-// Cached per table+field-set — sysId is not part of the cache key because
-// metadata is not record-specific.
+// Cached per table+field-set+language — sysId is not part of the cache key because
+// metadata is not record-specific. Failed fetches are never cached — a remount will retry.
 export async function getRecordMetadata(
   table: string,
   fields: string[],
+  language: string = 'en',
 ): Promise<Record<string, FieldData>> {
   if (fields.length === 0) return {};
- 
-  const cacheKey = `recordmetadata:${table}:${[...fields].sort().join(',')}`;
+
+  const cacheKey = `recordmetadata:${table}:${language}:${[...fields].sort().join(',')}`;
   return cached<Record<string, FieldData>>(cacheKey, async () => {
-    try {
-      const data = await post<{ result: Record<string, any> | null; error?: string }>(
-        RHINO_METADATA_ENDPOINT,
-        { table, fields },
-      );
-      if (!data.result) return {};
-      const result: Record<string, FieldData> = {};
-      for (const key of Object.keys(data.result)) {
-        result[key] = normaliseFieldData(data.result[key]);
-      }
-      return result;
-    } catch {
-      return {};
+    const data = await post<{ result: Record<string, any> | null; error?: string }>(
+      RHINO_METADATA_ENDPOINT,
+      { table, fields, language },
+    );
+    if (!data.result) throw new Error(data.error ?? 'getRecordMetadata: server returned null result');
+    const result: Record<string, FieldData> = {};
+    for (const key of Object.keys(data.result)) {
+      result[key] = normaliseFieldData(data.result[key]);
     }
+    return result;
   });
 }

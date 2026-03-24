@@ -19,7 +19,6 @@ export * as RhinoService from './services/RhinoService';
 // Atoms — foundation
 export { Text } from './components/atoms/Text';
 export { Label } from './components/atoms/Label';
-export { FieldWrapper } from './components/atoms/FieldWrapper';
 export { Icon } from './components/atoms/Icon';
 export type { IconName } from './components/atoms/Icon';
 export { Spinner } from './components/atoms/Spinner';
@@ -30,8 +29,8 @@ export { TextArea } from './components/atoms/TextArea';
 export { Checkbox } from './components/atoms/Checkbox';
 export { SelectInput } from './components/atoms/SelectInput';
 export type { SelectOption } from './components/atoms/SelectInput';
-export { ReferenceInput } from './components/atoms/ReferenceInput';
-export type { ReferenceResult, ReferenceSearchColumn } from './components/atoms/ReferenceInput';
+export { Field } from './components/atoms/Field';
+export type { FieldProps } from './components/atoms/Field';
 
 // Atoms — feedback & action
 export { Button } from './components/atoms/Button';
@@ -39,9 +38,7 @@ export { Badge } from './components/atoms/Badge';
 export { Tooltip } from './components/atoms/Tooltip';
 export { Popover } from './components/atoms/Popover';
 
-// Molecules — field molecule
-export { Field } from './components/molecules/Field';
-export type { FieldProps } from './components/molecules/Field';
+// Molecules
 export { SearchBar } from './components/molecules/SearchBar';
 export type { SearchBarProps } from './components/molecules/SearchBar';
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTheme } from '../../../npm-package/context/ThemeContext';
-import { Field } from '../../../npm-package/components/molecules/Field';
+import { Field } from '../../../npm-package/components/atoms/Field';
 import { Text } from '../../../npm-package/components/atoms/Text';
 import { PropTable } from '../../components/PropTable';
 import { CodeSnippet } from '../../components/CodeSnippet';

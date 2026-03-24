@@ -48,10 +48,6 @@ export function CheckboxPage(): React.ReactElement {
                 <Checkbox id="cb-checked" value={true} onChange={() => undefined} />
               </div>
               <div style={stateRowStyle}>
-                <span style={labelStyle}>hasError</span>
-                <Checkbox id="cb-error" value={false} onChange={() => undefined} hasError />
-              </div>
-              <div style={stateRowStyle}>
                 <span style={labelStyle}>readOnly unchecked</span>
                 <Checkbox id="cb-ro-unchecked" value={false} onChange={() => undefined} readOnly />
               </div>
@@ -77,7 +73,6 @@ export function CheckboxPage(): React.ReactElement {
                 { name: 'value', type: 'boolean', required: true, description: 'Controlled checked state.' },
                 { name: 'onChange', type: '(value: boolean) => void', required: true, description: 'Called with the new boolean value when the checkbox is toggled.' },
                 { name: 'readOnly', type: 'boolean', defaultValue: 'false', description: 'When true, renders a disabled non-interactive checkbox.' },
-                { name: 'hasError', type: 'boolean', defaultValue: 'false', description: 'Applies a red outline to indicate a validation error.' },
                 { name: 'style', type: 'React.CSSProperties', description: 'Inline style overrides applied to the wrapper element.' },
                 { name: 'className', type: 'string', description: 'CSS class name override applied to the wrapper element.' },
               ]}

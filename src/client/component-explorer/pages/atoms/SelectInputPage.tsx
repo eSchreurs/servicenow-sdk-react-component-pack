@@ -42,7 +42,7 @@ export function SelectInputPage(): React.ReactElement {
   return (
     <PageLayout
       title="SelectInput"
-      description="Dropdown choice input. Controlled component. Options are passed as an array of value/label pairs. In read-only mode renders the selected option's label as plain text."
+      description="Dropdown choice input. Controlled component. Options are passed as an array of value/label pairs. Error borders are managed by FieldWrapper when used inside Field."
       sections={[
         {
           title: 'Preview',
@@ -66,17 +66,6 @@ export function SelectInputPage(): React.ReactElement {
                   options={PRIORITY_OPTIONS}
                   onChange={() => undefined}
                   placeholder="-- Select priority --"
-                />
-              </div>
-              <div style={stateRowStyle}>
-                <span style={labelStyle}>hasError</span>
-                <SelectInput
-                  id="si-error"
-                  value=""
-                  options={PRIORITY_OPTIONS}
-                  onChange={() => undefined}
-                  placeholder="-- Select priority --"
-                  hasError
                 />
               </div>
               <div style={stateRowStyle}>
@@ -121,9 +110,8 @@ export function SelectInputPage(): React.ReactElement {
                 { name: 'value', type: 'string', required: true, description: 'Controlled value — must match one of the option values, or empty string for no selection.' },
                 { name: 'options', type: 'SelectOption[]', required: true, description: 'Array of { value, label } pairs. value is the stored value; label is the display text.' },
                 { name: 'onChange', type: '(value: string) => void', required: true, description: 'Called with the stored value of the selected option.' },
-                { name: 'readOnly', type: 'boolean', defaultValue: 'false', description: 'When true, renders the selected option label as plain text.' },
+                { name: 'readOnly', type: 'boolean', defaultValue: 'false', description: 'When true, the select is disabled (HTML select has no readOnly attribute). Use Field for read-only rendering as a span.' },
                 { name: 'mandatory', type: 'boolean', description: 'Sets the native required attribute.' },
-                { name: 'hasError', type: 'boolean', defaultValue: 'false', description: 'Applies a red border to indicate a validation error.' },
                 { name: 'placeholder', type: 'string', description: 'When provided, rendered as the first blank option in the dropdown.' },
                 { name: 'style', type: 'React.CSSProperties', description: 'Inline style overrides.' },
                 { name: 'className', type: 'string', description: 'CSS class name override.' },

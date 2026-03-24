@@ -6,7 +6,6 @@ interface CheckboxProps {
   value: boolean;
   onChange: (value: boolean) => void;
   readOnly?: boolean;
-  hasError?: boolean;
   style?: React.CSSProperties;
   className?: string;
 }
@@ -16,7 +15,6 @@ export function Checkbox({
   value,
   onChange,
   readOnly = false,
-  hasError = false,
   style,
   className,
 }: CheckboxProps): React.ReactElement {
@@ -26,8 +24,6 @@ export function Checkbox({
     display: 'inline-flex',
     alignItems: 'center',
     height: theme.inputHeight,
-    outline: 'none',
-    borderRadius: theme.borderRadiusSm,
     ...style,
   };
 

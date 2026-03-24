@@ -32,7 +32,7 @@ export function TextInputPage(): React.ReactElement {
   return (
     <PageLayout
       title="TextInput"
-      description="Single-line text input. Controlled component — receives value and calls onChange. In read-only mode renders as plain text (not a disabled input)."
+      description="Single-line text input. Controlled component — receives value and calls onChange. Pass readOnly to suppress interaction; error borders are managed by FieldWrapper when used inside Field."
       sections={[
         {
           title: 'Preview',
@@ -46,10 +46,6 @@ export function TextInputPage(): React.ReactElement {
               <div style={stateRowStyle}>
                 <span style={labelStyle}>placeholder</span>
                 <TextInput id="ti-placeholder" value="" onChange={() => undefined} placeholder="Type something…" />
-              </div>
-              <div style={stateRowStyle}>
-                <span style={labelStyle}>hasError</span>
-                <TextInput id="ti-error" value="Invalid value" onChange={() => undefined} hasError />
               </div>
               <div style={stateRowStyle}>
                 <span style={labelStyle}>readOnly</span>
@@ -80,12 +76,11 @@ export function TextInputPage(): React.ReactElement {
                 { name: 'id', type: 'string', required: true, description: 'HTML id applied to the input element.' },
                 { name: 'value', type: 'string', required: true, description: 'Controlled value.' },
                 { name: 'onChange', type: '(value: string) => void', required: true, description: 'Called with the new value on every keystroke.' },
-                { name: 'readOnly', type: 'boolean', defaultValue: 'false', description: 'When true, renders a plain <span> instead of an interactive input.' },
+                { name: 'readOnly', type: 'boolean', defaultValue: 'false', description: 'When true, the native input is read-only (no interaction). Use Field for read-only rendering as a span.' },
                 { name: 'mandatory', type: 'boolean', description: 'Sets the native required attribute.' },
                 { name: 'maxLength', type: 'number', description: 'Maximum number of characters enforced via the native maxLength attribute.' },
                 { name: 'placeholder', type: 'string', description: 'Placeholder text shown when value is empty.' },
                 { name: 'inputType', type: 'string', defaultValue: "'text'", description: "HTML input type (e.g. 'text', 'email', 'url', 'number')." },
-                { name: 'hasError', type: 'boolean', defaultValue: 'false', description: 'Applies a red border to indicate a validation error.' },
                 { name: 'style', type: 'React.CSSProperties', description: 'Inline style overrides.' },
                 { name: 'className', type: 'string', description: 'CSS class name override.' },
               ]}
@@ -117,13 +112,12 @@ const [value, setValue] = useState('');
   readOnly
 />
 
-// With validation error
+// With email validation
 <TextInput
   id="email"
   value={value}
   onChange={setValue}
   inputType="email"
-  hasError={!isValid}
 />`}
             />
           ),

@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useTheme } from '../../context/ThemeContext';
-import { FieldWrapper } from '../atoms/FieldWrapper';
-import { TextInput } from '../atoms/TextInput';
-import { TextArea } from '../atoms/TextArea';
-import { Checkbox } from '../atoms/Checkbox';
-import { SelectInput } from '../atoms/SelectInput';
-import { ReferenceInput } from '../atoms/ReferenceInput';
-import { Popover } from '../atoms/Popover';
+import { FieldWrapper } from './_internal/FieldWrapper';
+import { TextInput } from './TextInput';
+import { TextArea } from './TextArea';
+import { Checkbox } from './Checkbox';
+import { SelectInput } from './SelectInput';
+import { ReferenceInput } from './_internal/ReferenceInput';
+import { Popover } from './Popover';
 import * as SearchService from '../../services/SearchService';
 import * as RecordService from '../../services/RecordService';
 import * as RhinoService from '../../services/RhinoService';
@@ -349,36 +349,61 @@ export function Field({
   }, [value, reference, previewFields]);
 
   // ---------------------------------------------------------------------------
+  // Read-only span style (shared across textinput, number, textarea, choice)
+  // ---------------------------------------------------------------------------
+
+  const readOnlySpanStyle: React.CSSProperties = {
+    display: 'block',
+    fontFamily: theme.fontFamily,
+    fontSize: theme.fontSizeBase,
+    color: theme.colorText,
+    lineHeight: theme.lineHeightBase,
+    minHeight: theme.inputHeight,
+    padding: `0 ${theme.inputPaddingHorizontal}`,
+    alignContent: 'center',
+  };
+
+  // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
 
   if (kind === 'textinput') {
+    if (readOnly) {
+      return (
+        <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
+          <span id={name} style={readOnlySpanStyle}>{value}</span>
+        </FieldWrapper>
+      );
+    }
     return (
       <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
         <TextInput
           id={name}
           value={value}
           onChange={(v) => onChange(name, v, v)}
-          readOnly={readOnly}
           mandatory={mandatory}
           maxLength={maxLength}
-          hasError={hasError}
         />
       </FieldWrapper>
     );
   }
 
   if (kind === 'number') {
+    if (readOnly) {
+      return (
+        <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
+          <span id={name} style={readOnlySpanStyle}>{value}</span>
+        </FieldWrapper>
+      );
+    }
     return (
       <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
         <TextInput
           id={name}
           value={value}
           onChange={(v) => onChange(name, v, v)}
-          readOnly={readOnly}
           mandatory={mandatory}
           maxLength={maxLength}
-          hasError={hasError}
           inputType="number"
         />
       </FieldWrapper>
@@ -386,16 +411,21 @@ export function Field({
   }
 
   if (kind === 'textarea') {
+    if (readOnly) {
+      return (
+        <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
+          <span id={name} style={{ ...readOnlySpanStyle, whiteSpace: 'pre-wrap', alignContent: undefined }}>{value}</span>
+        </FieldWrapper>
+      );
+    }
     return (
       <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
         <TextArea
           id={name}
           value={value}
           onChange={(v) => onChange(name, v, v)}
-          readOnly={readOnly}
           mandatory={mandatory}
           maxLength={maxLength}
-          hasError={hasError}
         />
       </FieldWrapper>
     );
@@ -413,7 +443,6 @@ export function Field({
             onChange(name, str, str);
           }}
           readOnly={readOnly}
-          hasError={hasError}
         />
       </FieldWrapper>
     );
@@ -425,12 +454,23 @@ export function Field({
       if (!c.dependentValue) return true;
       return c.dependentValue === dependentValue;
     });
-    const showBlank = !(mandatory && value !== '');
     const options = visibleChoices.map((c) => ({ value: c.value, label: c.label }));
 
+    if (readOnly) {
+      const match = visibleChoices.find((c) => c.value === value);
+      const selectedLabel = match ? match.label : value;
+      return (
+        <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
+          <span id={name} style={readOnlySpanStyle}>{selectedLabel}</span>
+        </FieldWrapper>
+      );
+    }
+
+    const showBlank = !(mandatory && value !== '');
+
     function handleChoiceChange(selected: string): void {
-      const match = visibleChoices.find((c) => c.value === selected);
-      const selectedLabel = match ? match.label : '';
+      const choiceMatch = visibleChoices.find((c) => c.value === selected);
+      const selectedLabel = choiceMatch ? choiceMatch.label : '';
       onChange(name, selected, selectedLabel);
     }
 
@@ -441,9 +481,7 @@ export function Field({
           value={value}
           options={options}
           onChange={handleChoiceChange}
-          readOnly={readOnly}
           mandatory={mandatory}
-          hasError={hasError}
           placeholder={showBlank ? '' : undefined}
         />
       </FieldWrapper>
@@ -519,97 +557,68 @@ export function Field({
   }
 
   // Date kinds: 'datetime' | 'date' | 'time'
-  const isDateKind = kind === 'datetime' || kind === 'date' || kind === 'time';
-  if (isDateKind) {
-    const dateMode = mode ?? (kind as 'datetime' | 'date' | 'time');
+  const dateMode = mode ?? (kind as 'datetime' | 'date' | 'time');
 
-    let inputValue: string;
-    if (dateMode === 'datetime') inputValue = snToInputDatetime(value);
-    else if (dateMode === 'date') inputValue = snToInputDate(value);
-    else inputValue = snToInputTime(value);
+  let inputValue: string;
+  if (dateMode === 'datetime') inputValue = snToInputDatetime(value);
+  else if (dateMode === 'date') inputValue = snToInputDate(value);
+  else inputValue = snToInputTime(value);
 
-    if (readOnly) {
-      let displayText: string;
-      if (dateMode === 'datetime') displayText = formatDatetimeReadOnly(value);
-      else if (dateMode === 'date') displayText = formatDateReadOnly(value);
-      else displayText = formatTimeReadOnly(value);
-
-      const readOnlyStyle: React.CSSProperties = {
-        display: 'block',
-        fontFamily: theme.fontFamily,
-        fontSize: theme.fontSizeBase,
-        color: theme.colorText,
-        lineHeight: theme.lineHeightBase,
-        minHeight: theme.inputHeight,
-        padding: `0 ${theme.inputPaddingHorizontal}`,
-        alignContent: 'center',
-      };
-
-      return (
-        <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
-          <span id={name} style={readOnlyStyle}>{displayText}</span>
-        </FieldWrapper>
-      );
-    }
-
-    const inputType = dateMode === 'datetime' ? 'datetime-local' : dateMode;
-
-    const inputStyle: React.CSSProperties = {
-      display: 'block',
-      width: '100%',
-      height: theme.inputHeight,
-      padding: `0 ${theme.inputPaddingHorizontal}`,
-      fontFamily: theme.fontFamily,
-      fontSize: theme.fontSizeBase,
-      color: theme.colorText,
-      backgroundColor: theme.inputBackgroundColor,
-      border: `${theme.borderWidth} solid ${theme.colorBorder}`,
-      borderRadius: theme.borderRadius,
-      boxSizing: 'border-box',
-      outline: 'none',
-      transition: `border-color ${theme.transitionSpeed}`,
-    };
-
-    function handleDateChange(e: React.ChangeEvent<HTMLInputElement>): void {
-      const raw = e.target.value;
-      let snValue: string;
-      if (dateMode === 'datetime') snValue = inputDatetimeToSn(raw);
-      else if (dateMode === 'date') snValue = inputDateToSn(raw);
-      else snValue = inputTimeToSn(raw);
-      onChange(name, snValue, snValue);
-    }
+  if (readOnly) {
+    let displayText: string;
+    if (dateMode === 'datetime') displayText = formatDatetimeReadOnly(value);
+    else if (dateMode === 'date') displayText = formatDateReadOnly(value);
+    else displayText = formatTimeReadOnly(value);
 
     return (
       <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
-        <input
-          id={name}
-          type={inputType}
-          value={inputValue}
-          onChange={handleDateChange}
-          required={mandatory}
-          style={inputStyle}
-          onFocus={(e) => {
-            e.currentTarget.style.borderColor = theme.colorBorderFocus;
-          }}
-          onBlur={(e) => {
-            e.currentTarget.style.borderColor = theme.colorBorder;
-          }}
-        />
+        <span id={name} style={readOnlySpanStyle}>{displayText}</span>
       </FieldWrapper>
     );
   }
 
-  // Unreachable — resolveKind always returns a valid kind — but satisfies TypeScript
+  const inputType = dateMode === 'datetime' ? 'datetime-local' : dateMode;
+
+  const dateInputStyle: React.CSSProperties = {
+    display: 'block',
+    width: '100%',
+    height: theme.inputHeight,
+    padding: `0 ${theme.inputPaddingHorizontal}`,
+    fontFamily: theme.fontFamily,
+    fontSize: theme.fontSizeBase,
+    color: theme.colorText,
+    backgroundColor: theme.inputBackgroundColor,
+    border: `${theme.borderWidth} solid ${theme.colorBorder}`,
+    borderRadius: theme.borderRadius,
+    boxSizing: 'border-box',
+    outline: 'none',
+    transition: `border-color ${theme.transitionSpeed}`,
+  };
+
+  function handleDateChange(e: React.ChangeEvent<HTMLInputElement>): void {
+    const raw = e.target.value;
+    let snValue: string;
+    if (dateMode === 'datetime') snValue = inputDatetimeToSn(raw);
+    else if (dateMode === 'date') snValue = inputDateToSn(raw);
+    else snValue = inputTimeToSn(raw);
+    onChange(name, snValue, snValue);
+  }
+
   return (
     <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
-      <TextInput
+      <input
         id={name}
-        value={value}
-        onChange={(v) => onChange(name, v, v)}
-        readOnly={readOnly}
-        mandatory={mandatory}
-        maxLength={maxLength}
-        hasError={hasError}
+        type={inputType}
+        value={inputValue}
+        onChange={handleDateChange}
+        required={mandatory}
+        style={dateInputStyle}
+        onFocus={(e) => {
+          e.currentTarget.style.borderColor = theme.colorBorderFocus;
+        }}
+        onBlur={(e) => {
+          e.currentTarget.style.borderColor = theme.colorBorder;
+        }}
       />
     </FieldWrapper>
   );

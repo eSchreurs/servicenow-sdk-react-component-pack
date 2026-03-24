@@ -1,6 +1,6 @@
 import React from 'react';
-import { useTheme } from '../../context/ThemeContext';
-import { Label } from './Label';
+import { useTheme } from '../../../context/ThemeContext';
+import { Label } from '../Label';
 
 interface FieldWrapperProps {
   name: string;

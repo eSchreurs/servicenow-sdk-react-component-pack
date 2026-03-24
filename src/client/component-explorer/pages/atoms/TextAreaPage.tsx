@@ -33,7 +33,7 @@ export function TextAreaPage(): React.ReactElement {
   return (
     <PageLayout
       title="TextArea"
-      description="Multi-line text input. Controlled component with configurable row count. In read-only mode renders as plain text preserving whitespace."
+      description="Multi-line text input. Controlled component with configurable row count. Error borders are managed by FieldWrapper when used inside Field."
       sections={[
         {
           title: 'Preview',
@@ -46,16 +46,6 @@ export function TextAreaPage(): React.ReactElement {
                   id="ta-default"
                   value="This is a multi-line text area with some example content."
                   onChange={() => undefined}
-                  rows={3}
-                />
-              </div>
-              <div style={stateRowStyle}>
-                <span style={labelStyle}>hasError</span>
-                <TextArea
-                  id="ta-error"
-                  value="This field has an error."
-                  onChange={() => undefined}
-                  hasError
                   rows={3}
                 />
               </div>
@@ -94,12 +84,11 @@ export function TextAreaPage(): React.ReactElement {
                 { name: 'id', type: 'string', required: true, description: 'HTML id applied to the textarea element.' },
                 { name: 'value', type: 'string', required: true, description: 'Controlled value.' },
                 { name: 'onChange', type: '(value: string) => void', required: true, description: 'Called with the new value on every keystroke.' },
-                { name: 'readOnly', type: 'boolean', defaultValue: 'false', description: 'When true, renders a plain <span> instead of an interactive textarea.' },
+                { name: 'readOnly', type: 'boolean', defaultValue: 'false', description: 'When true, the native textarea is read-only (no interaction). Use Field for read-only rendering as a span.' },
                 { name: 'mandatory', type: 'boolean', description: 'Sets the native required attribute.' },
                 { name: 'maxLength', type: 'number', description: 'Maximum number of characters enforced via the native maxLength attribute.' },
                 { name: 'placeholder', type: 'string', description: 'Placeholder text shown when value is empty.' },
                 { name: 'rows', type: 'number', defaultValue: '4', description: 'Number of visible text rows.' },
-                { name: 'hasError', type: 'boolean', defaultValue: 'false', description: 'Applies a red border to indicate a validation error.' },
                 { name: 'style', type: 'React.CSSProperties', description: 'Inline style overrides.' },
                 { name: 'className', type: 'string', description: 'CSS class name override.' },
               ]}

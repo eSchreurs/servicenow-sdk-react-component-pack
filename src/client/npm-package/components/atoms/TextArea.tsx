@@ -51,7 +51,7 @@ export function TextArea({
     fontSize: theme.fontSizeBase,
     color: theme.colorText,
     backgroundColor: theme.inputBackgroundColor,
-    border: `${theme.borderWidth} solid ${hasError ? theme.colorDanger : theme.colorBorder}`,
+    border: `${theme.borderWidth} solid ${theme.colorBorder}`,
     borderRadius: theme.borderRadius,
     boxSizing: 'border-box',
     outline: 'none',
@@ -76,7 +76,7 @@ export function TextArea({
         e.currentTarget.style.borderColor = theme.colorBorderFocus;
       }}
       onBlur={(e) => {
-        e.currentTarget.style.borderColor = hasError ? theme.colorDanger : theme.colorBorder;
+        e.currentTarget.style.borderColor = theme.colorBorder;
       }}
     />
   );

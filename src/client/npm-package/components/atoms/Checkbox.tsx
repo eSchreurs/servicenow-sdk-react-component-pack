@@ -26,7 +26,7 @@ export function Checkbox({
     display: 'inline-flex',
     alignItems: 'center',
     height: theme.inputHeight,
-    outline: hasError ? `${theme.borderWidth} solid ${theme.colorDanger}` : 'none',
+    outline: 'none',
     borderRadius: theme.borderRadiusSm,
     ...style,
   };

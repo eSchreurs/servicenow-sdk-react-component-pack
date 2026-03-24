@@ -55,7 +55,7 @@ export function TooltipPage(): React.ReactElement {
                   <Icon name="info" size={18} color={theme.colorPrimary} />
                 </Tooltip>
                 <Tooltip content="This field is required" position="top">
-                  <Icon name="alert-circle" size={18} color={theme.colorDanger} />
+                  <Icon name="info" size={18} color={theme.colorDanger} />
                 </Tooltip>
               </div>
 

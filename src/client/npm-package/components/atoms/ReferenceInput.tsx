@@ -54,6 +54,7 @@ export function ReferenceInput({
   const [inputText, setInputText] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [flipUp, setFlipUp] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -72,12 +73,15 @@ export function ReferenceInput({
     return () => document.removeEventListener('mousedown', handleMouseDown);
   }, []);
 
-  // Measure and flip dropdown if insufficient space below
+  // Measure and flip dropdown if insufficient space below.
+  // Runs after the dropdown has been inserted into the DOM so dropdownRef has
+  // a real measured height rather than relying on a hardcoded constant.
   useEffect(() => {
-    if (!showDropdown || !containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    const spaceBelow = window.innerHeight - rect.bottom;
-    setFlipUp(spaceBelow < 220);
+    if (!showDropdown || !containerRef.current || !dropdownRef.current) return;
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const dropdownHeight = dropdownRef.current.getBoundingClientRect().height;
+    const spaceBelow = window.innerHeight - containerRect.bottom;
+    setFlipUp(spaceBelow < dropdownHeight);
   }, [showDropdown]);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -119,7 +123,9 @@ export function ReferenceInput({
     alignItems: 'center',
     height: theme.inputHeight,
     backgroundColor: isSelected ? theme.colorBackgroundMuted : theme.inputBackgroundColor,
-    border: `${theme.borderWidth} solid ${hasError ? theme.colorDanger : theme.colorBorder}`,
+    border: `${theme.borderWidth} solid ${
+      isFocused ? theme.colorBorderFocus : hasError ? theme.colorDanger : theme.colorBorder
+    }`,
     borderRadius: theme.borderRadius,
     overflow: 'hidden',
     transition: `border-color ${theme.transitionSpeed}`,
@@ -238,15 +244,7 @@ export function ReferenceInput({
 
   return (
     <div ref={containerRef} style={containerStyle} className={className}>
-      <div
-        style={inputRowStyle}
-        onFocus={() => {
-          if (containerRef.current) {
-            const border = containerRef.current.querySelector('div') as HTMLDivElement | null;
-            if (border) border.style.borderColor = theme.colorBorderFocus;
-          }
-        }}
-      >
+      <div style={inputRowStyle}>
         {/* Pen icon (left) — only in selected state */}
         {isSelected && (
           <button
@@ -280,8 +278,10 @@ export function ReferenceInput({
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             onFocus={() => {
+              setIsFocused(true);
               if (inputText.length >= 2) setIsOpen(true);
             }}
+            onBlur={() => setIsFocused(false)}
             placeholder={placeholder}
             required={mandatory}
             style={textStyle}

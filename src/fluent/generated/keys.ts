@@ -98,13 +98,6 @@ declare global {
                 composite: [
                     {
                         table: 'sys_ux_lib_asset'
-                        id: '042bc5ac69ef40479de8065d6ce84a24'
-                        key: {
-                            name: 'x_326171_ssdk_pack/main'
-                        }
-                    },
-                    {
-                        table: 'sys_ux_lib_asset'
                         id: '5031fbdd35fe44779b79772418a41475'
                         key: {
                             name: 'x_326171_ssdk_pack/component-explorer/main'
@@ -115,34 +108,6 @@ declare global {
                         id: '899e1e8d5ab44e38b4cb54b5413f9aac'
                         key: {
                             name: 'x_326171_ssdk_pack/component-explorer/main.js.map'
-                        }
-                    },
-                    {
-                        table: 'sys_ui_page'
-                        id: '98da81a686de4c44a86d6bf84eeab3dd'
-                        key: {
-                            endpoint: 'x_326171_ssdk_pack_component_pack.do'
-                        }
-                    },
-                    {
-                        table: 'sys_ux_lib_asset'
-                        id: 'a72c3a30f2ed4016af132bbb0b635ceb'
-                        key: {
-                            name: 'x_326171_ssdk_pack/client.js.map'
-                        }
-                    },
-                    {
-                        table: 'sys_ux_lib_asset'
-                        id: 'd1f53efb0d934e04be5709c3ce2a4196'
-                        key: {
-                            name: 'x_326171_ssdk_pack/main.js.map'
-                        }
-                    },
-                    {
-                        table: 'sys_ux_lib_asset'
-                        id: 'e3deaa8795434783a3bd658eb3bf9ddc'
-                        key: {
-                            name: 'x_326171_ssdk_pack/client'
                         }
                     },
                 ]

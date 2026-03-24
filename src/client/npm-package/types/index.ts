@@ -1,3 +1,5 @@
+import type React from 'react';
+
 // ---------------------------------------------------------------------------
 // API Response Shapes — raw shapes from the ServiceNow REST API.
 // These are never consumed by components directly.
@@ -65,6 +67,24 @@ export interface ReferenceSearchResult {
   columns: Array<{ field: string; value: string }>;
 }
  
+// ---------------------------------------------------------------------------
+// Base Field Props — shared by all field molecules
+// ---------------------------------------------------------------------------
+
+export interface BaseFieldProps {
+  name: string;
+  label: string;
+  value: string;
+  displayValue: string;
+  mandatory: boolean;
+  readOnly: boolean;
+  hasError: boolean;
+  maxLength?: number;
+  onChange: (field: string, value: string, displayValue: string) => void;
+  style?: React.CSSProperties;
+  className?: string;
+}
+
 // ---------------------------------------------------------------------------
 // Error
 // ---------------------------------------------------------------------------

@@ -47,6 +47,7 @@ export async function get<T>(path: string, params?: Record<string, string>): Pro
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
+        'X-UserToken': getCsrfToken(),
       },
     });
   } catch (e) {

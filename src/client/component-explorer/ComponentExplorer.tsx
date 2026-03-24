@@ -2,27 +2,25 @@ import React, { useState } from 'react';
 import { ThemeProvider, useTheme } from '../npm-package/context/ThemeContext';
 import { Text } from '../npm-package/components/atoms/Text';
 
-// Atom pages — Phase 4 (foundation)
+// Atom pages — foundation
 import { TextPage } from './pages/atoms/TextPage';
 import { LabelPage } from './pages/atoms/LabelPage';
-import { FieldWrapperPage } from './pages/atoms/FieldWrapperPage';
 import { IconPage } from './pages/atoms/IconPage';
 import { SpinnerPage } from './pages/atoms/SpinnerPage';
 
-// Atom pages — Phase 5 (inputs)
+// Atom pages — inputs
 import { TextInputPage } from './pages/atoms/TextInputPage';
 import { TextAreaPage } from './pages/atoms/TextAreaPage';
 import { CheckboxPage } from './pages/atoms/CheckboxPage';
 import { SelectInputPage } from './pages/atoms/SelectInputPage';
-import { ReferenceInputPage } from './pages/atoms/ReferenceInputPage';
 
-// Atom pages — Phase 6 (feedback & action)
+// Atom pages — feedback & action
 import { ButtonPage } from './pages/atoms/ButtonPage';
 import { BadgePage } from './pages/atoms/BadgePage';
 import { TooltipPage } from './pages/atoms/TooltipPage';
 import { PopoverPage } from './pages/atoms/PopoverPage';
 
-// Molecule pages — Phase 7
+// Atom pages — Field
 import { StringFieldPage } from './pages/molecules/StringFieldPage';
 import { TextAreaFieldPage } from './pages/molecules/TextAreaFieldPage';
 import { NumberFieldPage } from './pages/molecules/NumberFieldPage';
@@ -30,8 +28,9 @@ import { CheckboxFieldPage } from './pages/molecules/CheckboxFieldPage';
 import { DateTimeFieldPage } from './pages/molecules/DateTimeFieldPage';
 import { ChoiceFieldPage } from './pages/molecules/ChoiceFieldPage';
 import { ReferenceFieldPage } from './pages/molecules/ReferenceFieldPage';
+
+// Molecule pages
 import { SearchBarPage } from './pages/molecules/SearchBarPage';
-// All field molecule pages above now use the unified Field component internally
 
 // ---------------------------------------------------------------------------
 // Nav structure — add new pages here as phases are completed
@@ -55,7 +54,6 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { key: 'text', label: 'Text' },
       { key: 'label', label: 'Label' },
-      { key: 'field-wrapper', label: 'FieldWrapper' },
       { key: 'icon', label: 'Icon' },
       { key: 'spinner', label: 'Spinner' },
     ],
@@ -67,7 +65,6 @@ const NAV_GROUPS: NavGroup[] = [
       { key: 'text-area', label: 'TextArea' },
       { key: 'checkbox', label: 'Checkbox' },
       { key: 'select-input', label: 'SelectInput' },
-      { key: 'reference-input', label: 'ReferenceInput' },
     ],
   },
   {
@@ -80,26 +77,30 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    title: 'Molecules — Fields',
+    title: 'Atoms — Field',
     items: [
-      { key: 'string-field', label: 'StringField' },
-      { key: 'text-area-field', label: 'TextAreaField' },
-      { key: 'number-field', label: 'NumberField' },
-      { key: 'checkbox-field', label: 'CheckboxField' },
-      { key: 'date-time-field', label: 'DateTimeField' },
-      { key: 'choice-field', label: 'ChoiceField' },
-      { key: 'reference-field', label: 'ReferenceField' },
+      { key: 'string-field', label: 'String' },
+      { key: 'text-area-field', label: 'TextArea' },
+      { key: 'number-field', label: 'Number' },
+      { key: 'checkbox-field', label: 'Checkbox' },
+      { key: 'date-time-field', label: 'DateTime' },
+      { key: 'choice-field', label: 'Choice' },
+      { key: 'reference-field', label: 'Reference' },
+    ],
+  },
+  {
+    title: 'Molecules',
+    items: [
       { key: 'search-bar', label: 'SearchBar' },
     ],
   },
-  // Phase 9 — Organisms (to be added)
+  // Organisms (to be added)
 ];
 
 const PAGE_MAP: Record<PageKey, React.ReactElement> = {
   // Foundation atoms
   'text': <TextPage />,
   'label': <LabelPage />,
-  'field-wrapper': <FieldWrapperPage />,
   'icon': <IconPage />,
   'spinner': <SpinnerPage />,
   // Input atoms
@@ -107,13 +108,12 @@ const PAGE_MAP: Record<PageKey, React.ReactElement> = {
   'text-area': <TextAreaPage />,
   'checkbox': <CheckboxPage />,
   'select-input': <SelectInputPage />,
-  'reference-input': <ReferenceInputPage />,
   // Feedback & action atoms
   'button': <ButtonPage />,
   'badge': <BadgePage />,
   'tooltip': <TooltipPage />,
   'popover': <PopoverPage />,
-  // Molecule pages
+  // Field atom pages
   'string-field': <StringFieldPage />,
   'text-area-field': <TextAreaFieldPage />,
   'number-field': <NumberFieldPage />,
@@ -121,6 +121,7 @@ const PAGE_MAP: Record<PageKey, React.ReactElement> = {
   'date-time-field': <DateTimeFieldPage />,
   'choice-field': <ChoiceFieldPage />,
   'reference-field': <ReferenceFieldPage />,
+  // Molecule pages
   'search-bar': <SearchBarPage />,
 };
 

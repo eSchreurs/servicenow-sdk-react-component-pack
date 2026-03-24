@@ -13,7 +13,6 @@ interface SelectInputProps {
   onChange: (value: string) => void;
   readOnly?: boolean;
   mandatory?: boolean;
-  hasError?: boolean;
   placeholder?: string;
   style?: React.CSSProperties;
   className?: string;
@@ -26,32 +25,11 @@ export function SelectInput({
   onChange,
   readOnly = false,
   mandatory,
-  hasError = false,
   placeholder,
   style,
   className,
 }: SelectInputProps): React.ReactElement {
   const theme = useTheme();
-
-  if (readOnly) {
-    const selectedOption = options.find((o) => o.value === value);
-    const readOnlyStyle: React.CSSProperties = {
-      display: 'block',
-      fontFamily: theme.fontFamily,
-      fontSize: theme.fontSizeBase,
-      color: theme.colorText,
-      lineHeight: theme.lineHeightBase,
-      minHeight: theme.inputHeight,
-      padding: `0 ${theme.inputPaddingHorizontal}`,
-      alignContent: 'center',
-      ...style,
-    };
-    return (
-      <span id={id} style={readOnlyStyle} className={className}>
-        {selectedOption ? selectedOption.label : ''}
-      </span>
-    );
-  }
 
   const selectStyle: React.CSSProperties = {
     display: 'block',
@@ -66,8 +44,7 @@ export function SelectInput({
     borderRadius: theme.borderRadius,
     boxSizing: 'border-box',
     outline: 'none',
-    cursor: 'pointer',
-    transition: `border-color ${theme.transitionSpeed}`,
+    cursor: readOnly ? 'default' : 'pointer',
     ...style,
   };
 
@@ -77,14 +54,9 @@ export function SelectInput({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       required={mandatory}
+      disabled={readOnly}
       style={selectStyle}
       className={className}
-      onFocus={(e) => {
-        e.currentTarget.style.borderColor = theme.colorBorderFocus;
-      }}
-      onBlur={(e) => {
-        e.currentTarget.style.borderColor = theme.colorBorder;
-      }}
     >
       {placeholder !== undefined && (
         <option value="">{placeholder}</option>

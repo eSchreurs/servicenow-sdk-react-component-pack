@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useTheme } from '../../context/ThemeContext';
-import { Icon } from './Icon';
+import { useTheme } from '../../../context/ThemeContext';
+import { Icon } from '../Icon';
 
 export interface ReferenceSearchColumn {
   field: string;
@@ -73,9 +73,7 @@ export function ReferenceInput({
     return () => document.removeEventListener('mousedown', handleMouseDown);
   }, []);
 
-  // Measure and flip dropdown if insufficient space below.
-  // Runs after the dropdown has been inserted into the DOM so dropdownRef has
-  // a real measured height rather than relying on a hardcoded constant.
+  // Flip dropdown up if insufficient space below
   useEffect(() => {
     if (!showDropdown || !containerRef.current || !dropdownRef.current) return;
     const containerRect = containerRef.current.getBoundingClientRect();
@@ -135,7 +133,7 @@ export function ReferenceInput({
     flex: 1,
     padding: `0 ${theme.spacingSm}`,
     fontSize: theme.fontSizeBase,
-    color: isSelected ? theme.colorText : theme.colorText,
+    color: theme.colorText,
     backgroundColor: 'transparent',
     border: 'none',
     outline: 'none',
@@ -319,7 +317,6 @@ export function ReferenceInput({
               key={result.sysId}
               style={resultRowStyle}
               onMouseDown={(e) => {
-                // Prevent blur from closing dropdown before click registers
                 e.preventDefault();
                 handleSelectResult(result);
               }}

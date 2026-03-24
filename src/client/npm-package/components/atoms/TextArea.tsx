@@ -10,7 +10,6 @@ interface TextAreaProps {
   maxLength?: number;
   placeholder?: string;
   rows?: number;
-  hasError?: boolean;
   style?: React.CSSProperties;
   className?: string;
 }
@@ -24,24 +23,10 @@ export function TextArea({
   maxLength,
   placeholder,
   rows = 4,
-  hasError = false,
   style,
   className,
 }: TextAreaProps): React.ReactElement {
   const theme = useTheme();
-
-  if (readOnly) {
-    const readOnlyStyle: React.CSSProperties = {
-      display: 'block',
-      fontFamily: theme.fontFamily,
-      fontSize: theme.fontSizeBase,
-      color: theme.colorText,
-      lineHeight: theme.lineHeightBase,
-      whiteSpace: 'pre-wrap',
-      ...style,
-    };
-    return <span id={id} style={readOnlyStyle} className={className}>{value}</span>;
-  }
 
   const textAreaStyle: React.CSSProperties = {
     display: 'block',
@@ -57,7 +42,6 @@ export function TextArea({
     outline: 'none',
     resize: 'vertical',
     lineHeight: theme.lineHeightBase,
-    transition: `border-color ${theme.transitionSpeed}`,
     ...style,
   };
 
@@ -66,18 +50,13 @@ export function TextArea({
       id={id}
       value={value}
       onChange={(e) => onChange(e.target.value)}
+      readOnly={readOnly}
       maxLength={maxLength}
       placeholder={placeholder}
       rows={rows}
       required={mandatory}
       style={textAreaStyle}
       className={className}
-      onFocus={(e) => {
-        e.currentTarget.style.borderColor = theme.colorBorderFocus;
-      }}
-      onBlur={(e) => {
-        e.currentTarget.style.borderColor = theme.colorBorder;
-      }}
     />
   );
 }

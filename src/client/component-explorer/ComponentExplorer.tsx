@@ -179,7 +179,7 @@ function ExplorerShell(): React.ReactElement {
 
   const contentStyle: React.CSSProperties = {
     flex: 1,
-    overflowY: 'auto',
+    overflowY: 'inherit',
   };
 
   return (

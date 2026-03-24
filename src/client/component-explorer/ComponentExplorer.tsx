@@ -2,12 +2,19 @@ import React, { useState } from 'react';
 import { ThemeProvider, useTheme } from '../npm-package/context/ThemeContext';
 import { Text } from '../npm-package/components/atoms/Text';
 
-// Atom pages — Phase 4
+// Atom pages — Phase 4 (foundation)
 import { TextPage } from './pages/atoms/TextPage';
 import { LabelPage } from './pages/atoms/LabelPage';
 import { FieldWrapperPage } from './pages/atoms/FieldWrapperPage';
 import { IconPage } from './pages/atoms/IconPage';
 import { SpinnerPage } from './pages/atoms/SpinnerPage';
+
+// Atom pages — Phase 5 (inputs)
+import { TextInputPage } from './pages/atoms/TextInputPage';
+import { TextAreaPage } from './pages/atoms/TextAreaPage';
+import { CheckboxPage } from './pages/atoms/CheckboxPage';
+import { SelectInputPage } from './pages/atoms/SelectInputPage';
+import { ReferenceInputPage } from './pages/atoms/ReferenceInputPage';
 
 // ---------------------------------------------------------------------------
 // Nav structure — add new pages here as phases are completed
@@ -36,18 +43,34 @@ const NAV_GROUPS: NavGroup[] = [
       { key: 'spinner', label: 'Spinner' },
     ],
   },
-  // Phase 5 — Input Atoms (to be added)
+  {
+    title: 'Atoms — Inputs',
+    items: [
+      { key: 'text-input', label: 'TextInput' },
+      { key: 'text-area', label: 'TextArea' },
+      { key: 'checkbox', label: 'Checkbox' },
+      { key: 'select-input', label: 'SelectInput' },
+      { key: 'reference-input', label: 'ReferenceInput' },
+    ],
+  },
   // Phase 6 — Feedback & Action Atoms (to be added)
   // Phase 7 — Molecules (to be added)
   // Phase 8 — Organisms (to be added)
 ];
 
 const PAGE_MAP: Record<PageKey, React.ReactElement> = {
+  // Foundation atoms
   'text': <TextPage />,
   'label': <LabelPage />,
   'field-wrapper': <FieldWrapperPage />,
   'icon': <IconPage />,
   'spinner': <SpinnerPage />,
+  // Input atoms
+  'text-input': <TextInputPage />,
+  'text-area': <TextAreaPage />,
+  'checkbox': <CheckboxPage />,
+  'select-input': <SelectInputPage />,
+  'reference-input': <ReferenceInputPage />,
 };
 
 const DEFAULT_PAGE: PageKey = 'text';

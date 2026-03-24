@@ -185,7 +185,7 @@ export function ChoiceFieldPage(): React.ReactElement {
           children: (
             <PropTable
               props={[
-                { name: 'isChoiceField', type: 'boolean', required: true, description: "Set to true to render a SelectInput regardless of type. This flag takes priority over type in the resolution logic." },
+                { name: 'isChoiceField', type: 'boolean', required: true, description: "Set to true to render a Dropdown regardless of type. This flag takes priority over type in the resolution logic." },
                 { name: 'type', type: 'string', required: true, description: 'The underlying ServiceNow field type. Pass the real type from metadata — isChoiceField overrides the rendering decision.' },
                 { name: 'name', type: 'string', required: true, description: 'Field name — used as the select id and passed to onChange.' },
                 { name: 'label', type: 'string', required: true, description: 'Label text rendered above the select.' },

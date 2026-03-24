@@ -9,10 +9,9 @@ import { IconPage } from './pages/atoms/IconPage';
 import { SpinnerPage } from './pages/atoms/SpinnerPage';
 
 // Atom pages — inputs
-import { TextInputPage } from './pages/atoms/TextInputPage';
-import { TextAreaPage } from './pages/atoms/TextAreaPage';
+import { InputPage } from './pages/atoms/InputPage';
 import { CheckboxPage } from './pages/atoms/CheckboxPage';
-import { SelectInputPage } from './pages/atoms/SelectInputPage';
+import { DropdownPage } from './pages/atoms/DropdownPage';
 
 // Atom pages — feedback & action
 import { ButtonPage } from './pages/atoms/ButtonPage';
@@ -61,10 +60,9 @@ const NAV_GROUPS: NavGroup[] = [
   {
     title: 'Atoms — Inputs',
     items: [
-      { key: 'text-input', label: 'TextInput' },
-      { key: 'text-area', label: 'TextArea' },
+      { key: 'input', label: 'Input' },
       { key: 'checkbox', label: 'Checkbox' },
-      { key: 'select-input', label: 'SelectInput' },
+      { key: 'dropdown', label: 'Dropdown' },
     ],
   },
   {
@@ -104,10 +102,9 @@ const PAGE_MAP: Record<PageKey, React.ReactElement> = {
   'icon': <IconPage />,
   'spinner': <SpinnerPage />,
   // Input atoms
-  'text-input': <TextInputPage />,
-  'text-area': <TextAreaPage />,
+  'input': <InputPage />,
   'checkbox': <CheckboxPage />,
-  'select-input': <SelectInputPage />,
+  'dropdown': <DropdownPage />,
   // Feedback & action atoms
   'button': <ButtonPage />,
   'badge': <BadgePage />,

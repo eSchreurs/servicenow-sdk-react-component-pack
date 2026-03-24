@@ -32,7 +32,7 @@ export function CheckboxPage(): React.ReactElement {
   return (
     <PageLayout
       title="Checkbox"
-      description="Boolean toggle input. Controlled component. In read-only mode renders as a disabled, non-interactive checkbox."
+      description="Boolean toggle input. A dumb controlled atom — no validation, no error states, no read-only handling. Use Field for form behaviour."
       sections={[
         {
           title: 'Preview',
@@ -46,14 +46,6 @@ export function CheckboxPage(): React.ReactElement {
               <div style={stateRowStyle}>
                 <span style={labelStyle}>checked</span>
                 <Checkbox id="cb-checked" value={true} onChange={() => undefined} />
-              </div>
-              <div style={stateRowStyle}>
-                <span style={labelStyle}>readOnly unchecked</span>
-                <Checkbox id="cb-ro-unchecked" value={false} onChange={() => undefined} readOnly />
-              </div>
-              <div style={stateRowStyle}>
-                <span style={labelStyle}>readOnly checked</span>
-                <Checkbox id="cb-ro-checked" value={true} onChange={() => undefined} readOnly />
               </div>
 
               <Text variant="label" style={{ marginTop: theme.spacingMd }}>Interactive</Text>
@@ -72,7 +64,6 @@ export function CheckboxPage(): React.ReactElement {
                 { name: 'id', type: 'string', required: true, description: 'HTML id applied to the checkbox input.' },
                 { name: 'value', type: 'boolean', required: true, description: 'Controlled checked state.' },
                 { name: 'onChange', type: '(value: boolean) => void', required: true, description: 'Called with the new boolean value when the checkbox is toggled.' },
-                { name: 'readOnly', type: 'boolean', defaultValue: 'false', description: 'When true, renders a disabled non-interactive checkbox.' },
                 { name: 'style', type: 'React.CSSProperties', description: 'Inline style overrides applied to the wrapper element.' },
                 { name: 'className', type: 'string', description: 'CSS class name override applied to the wrapper element.' },
               ]}
@@ -91,14 +82,6 @@ const [active, setActive] = useState(false);
   id="active"
   value={active}
   onChange={setActive}
-/>
-
-// Read-only (e.g. from a form in view mode)
-<Checkbox
-  id="active-view"
-  value={record.active}
-  onChange={() => undefined}
-  readOnly
 />`}
             />
           ),

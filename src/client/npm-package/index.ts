@@ -16,6 +16,14 @@ export * as RecordService from './services/RecordService';
 export * as SearchService from './services/SearchService';
 export * as RhinoService from './services/RhinoService';
 
+// Atoms
+export { Text } from './components/atoms/Text';
+export { Label } from './components/atoms/Label';
+export { FieldWrapper } from './components/atoms/FieldWrapper';
+export { Icon } from './components/atoms/Icon';
+export type { IconName } from './components/atoms/Icon';
+export { Spinner } from './components/atoms/Spinner';
+
 // Types
 export type {
   RawFieldValue,

@@ -10,6 +10,7 @@ interface FieldWrapperProps {
   children: React.ReactNode;
   style?: React.CSSProperties;
   className?: string;
+  containerStyle?: React.CSSProperties;
 }
 
 export function FieldWrapper({
@@ -20,6 +21,7 @@ export function FieldWrapper({
   children,
   style,
   className,
+  containerStyle,
 }: FieldWrapperProps): React.ReactElement {
   const theme = useTheme();
 
@@ -33,9 +35,8 @@ export function FieldWrapper({
 
   const inputContainerStyle: React.CSSProperties = {
     borderRadius: theme.borderRadius,
-    border: hasError
-      ? `${theme.borderWidth} solid ${theme.colorDanger}`
-      : 'none',
+    outline: hasError ? `${theme.borderWidth} solid ${theme.colorDanger}` : 'none',
+    ...containerStyle,
   };
 
   return (

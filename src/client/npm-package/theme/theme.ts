@@ -33,6 +33,9 @@ export interface Theme {
   borderRadiusLg: string;
   borderWidth: string;
 
+  // Icons
+  iconSizeDefault: number;
+
   // Inputs
   inputHeight: string;
   inputPaddingHorizontal: string;
@@ -81,6 +84,9 @@ export const defaultTheme: Theme = {
   borderRadiusSm: '0.25rem',
   borderRadiusLg: '0.5rem',
   borderWidth: '1px',
+
+  // Icons
+  iconSizeDefault: 16,
 
   // Inputs
   inputHeight: '2.25rem',

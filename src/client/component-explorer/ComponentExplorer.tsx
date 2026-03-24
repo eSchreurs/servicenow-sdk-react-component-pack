@@ -16,6 +16,12 @@ import { CheckboxPage } from './pages/atoms/CheckboxPage';
 import { SelectInputPage } from './pages/atoms/SelectInputPage';
 import { ReferenceInputPage } from './pages/atoms/ReferenceInputPage';
 
+// Atom pages — Phase 6 (feedback & action)
+import { ButtonPage } from './pages/atoms/ButtonPage';
+import { BadgePage } from './pages/atoms/BadgePage';
+import { TooltipPage } from './pages/atoms/TooltipPage';
+import { PopoverPage } from './pages/atoms/PopoverPage';
+
 // ---------------------------------------------------------------------------
 // Nav structure — add new pages here as phases are completed
 // ---------------------------------------------------------------------------
@@ -53,9 +59,18 @@ const NAV_GROUPS: NavGroup[] = [
       { key: 'reference-input', label: 'ReferenceInput' },
     ],
   },
-  // Phase 6 — Feedback & Action Atoms (to be added)
+  {
+    title: 'Atoms — Feedback & Action',
+    items: [
+      { key: 'button', label: 'Button' },
+      { key: 'badge', label: 'Badge' },
+      { key: 'tooltip', label: 'Tooltip' },
+      { key: 'popover', label: 'Popover' },
+    ],
+  },
   // Phase 7 — Molecules (to be added)
-  // Phase 8 — Organisms (to be added)
+  // Phase 7 — Molecules (to be added)
+  // Phase 9 — Organisms (to be added)
 ];
 
 const PAGE_MAP: Record<PageKey, React.ReactElement> = {
@@ -71,6 +86,11 @@ const PAGE_MAP: Record<PageKey, React.ReactElement> = {
   'checkbox': <CheckboxPage />,
   'select-input': <SelectInputPage />,
   'reference-input': <ReferenceInputPage />,
+  // Feedback & action atoms
+  'button': <ButtonPage />,
+  'badge': <BadgePage />,
+  'tooltip': <TooltipPage />,
+  'popover': <PopoverPage />,
 };
 
 const DEFAULT_PAGE: PageKey = 'text';

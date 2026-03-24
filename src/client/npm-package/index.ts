@@ -33,6 +33,12 @@ export type { SelectOption } from './components/atoms/SelectInput';
 export { ReferenceInput } from './components/atoms/ReferenceInput';
 export type { ReferenceResult, ReferenceSearchColumn } from './components/atoms/ReferenceInput';
 
+// Atoms — feedback & action
+export { Button } from './components/atoms/Button';
+export { Badge } from './components/atoms/Badge';
+export { Tooltip } from './components/atoms/Tooltip';
+export { Popover } from './components/atoms/Popover';
+
 // Types
 export type {
   RawFieldValue,

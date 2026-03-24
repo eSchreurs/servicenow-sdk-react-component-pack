@@ -1,10 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { FieldWrapper } from './_internal/FieldWrapper';
-import { TextInput } from './TextInput';
-import { TextArea } from './TextArea';
+import { Input } from './Input';
 import { Checkbox } from './Checkbox';
-import { SelectInput } from './SelectInput';
+import { Dropdown } from './Dropdown';
 import { ReferenceInput } from './_internal/ReferenceInput';
 import { Popover } from './Popover';
 import * as SearchService from '../../services/SearchService';
@@ -349,7 +348,7 @@ export function Field({
   }, [value, reference, previewFields]);
 
   // ---------------------------------------------------------------------------
-  // Read-only span style (shared across textinput, number, textarea, choice)
+  // Read-only span style (shared across text-like kinds)
   // ---------------------------------------------------------------------------
 
   const readOnlySpanStyle: React.CSSProperties = {
@@ -361,6 +360,42 @@ export function Field({
     minHeight: theme.inputHeight,
     padding: `0 ${theme.inputPaddingHorizontal}`,
     alignContent: 'center',
+  };
+
+  // ---------------------------------------------------------------------------
+  // Textarea style (used when kind === 'textarea' and not readOnly)
+  // ---------------------------------------------------------------------------
+
+  const textareaStyle: React.CSSProperties = {
+    display: 'block',
+    width: '100%',
+    padding: `${theme.inputPaddingHorizontal}`,
+    fontFamily: theme.fontFamily,
+    fontSize: theme.fontSizeBase,
+    color: theme.colorText,
+    backgroundColor: theme.inputBackgroundColor,
+    border: `${theme.borderWidth} solid ${theme.colorBorder}`,
+    borderRadius: theme.borderRadius,
+    boxSizing: 'border-box',
+    outline: 'none',
+    resize: 'vertical',
+  };
+
+  // ---------------------------------------------------------------------------
+  // Disabled checkbox style (used for boolean readOnly)
+  // ---------------------------------------------------------------------------
+
+  const disabledCheckboxStyle: React.CSSProperties = {
+    width: '1rem',
+    height: '1rem',
+    cursor: 'default',
+    accentColor: theme.colorPrimary,
+  };
+
+  const disabledCheckboxContainerStyle: React.CSSProperties = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    height: theme.inputHeight,
   };
 
   // ---------------------------------------------------------------------------
@@ -377,13 +412,7 @@ export function Field({
     }
     return (
       <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
-        <TextInput
-          id={name}
-          value={value}
-          onChange={(v) => onChange(name, v, v)}
-          mandatory={mandatory}
-          maxLength={maxLength}
-        />
+        <Input id={name} value={value} onChange={(v) => onChange(name, v, v)} />
       </FieldWrapper>
     );
   }
@@ -398,14 +427,7 @@ export function Field({
     }
     return (
       <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
-        <TextInput
-          id={name}
-          value={value}
-          onChange={(v) => onChange(name, v, v)}
-          mandatory={mandatory}
-          maxLength={maxLength}
-          inputType="number"
-        />
+        <Input id={name} value={value} onChange={(v) => onChange(name, v, v)} type="number" />
       </FieldWrapper>
     );
   }
@@ -420,12 +442,13 @@ export function Field({
     }
     return (
       <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
-        <TextArea
+        <textarea
           id={name}
           value={value}
-          onChange={(v) => onChange(name, v, v)}
-          mandatory={mandatory}
+          onChange={(e) => onChange(name, e.target.value, e.target.value)}
           maxLength={maxLength}
+          rows={4}
+          style={textareaStyle}
         />
       </FieldWrapper>
     );
@@ -433,6 +456,22 @@ export function Field({
 
   if (kind === 'checkbox') {
     const boolValue = value === 'true';
+    if (readOnly) {
+      return (
+        <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
+          <div style={disabledCheckboxContainerStyle}>
+            <input
+              id={name}
+              type="checkbox"
+              checked={boolValue}
+              disabled
+              onChange={() => undefined}
+              style={disabledCheckboxStyle}
+            />
+          </div>
+        </FieldWrapper>
+      );
+    }
     return (
       <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
         <Checkbox
@@ -442,7 +481,6 @@ export function Field({
             const str = checked ? 'true' : 'false';
             onChange(name, str, str);
           }}
-          readOnly={readOnly}
         />
       </FieldWrapper>
     );
@@ -476,12 +514,11 @@ export function Field({
 
     return (
       <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
-        <SelectInput
+        <Dropdown
           id={name}
           value={value}
           options={options}
           onChange={handleChoiceChange}
-          mandatory={mandatory}
           placeholder={showBlank ? '' : undefined}
         />
       </FieldWrapper>

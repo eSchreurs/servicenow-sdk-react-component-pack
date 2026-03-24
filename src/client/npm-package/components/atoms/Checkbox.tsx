@@ -5,7 +5,6 @@ interface CheckboxProps {
   id: string;
   value: boolean;
   onChange: (value: boolean) => void;
-  readOnly?: boolean;
   style?: React.CSSProperties;
   className?: string;
 }
@@ -14,7 +13,6 @@ export function Checkbox({
   id,
   value,
   onChange,
-  readOnly = false,
   style,
   className,
 }: CheckboxProps): React.ReactElement {
@@ -30,7 +28,7 @@ export function Checkbox({
   const checkboxStyle: React.CSSProperties = {
     width: '1rem',
     height: '1rem',
-    cursor: readOnly ? 'default' : 'pointer',
+    cursor: 'pointer',
     accentColor: theme.colorPrimary,
   };
 
@@ -41,7 +39,6 @@ export function Checkbox({
         type="checkbox"
         checked={value}
         onChange={(e) => onChange(e.target.checked)}
-        disabled={readOnly}
         style={checkboxStyle}
       />
     </div>

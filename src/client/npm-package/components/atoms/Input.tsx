@@ -1,37 +1,32 @@
 import React from 'react';
 import { useTheme } from '../../context/ThemeContext';
 
-interface TextAreaProps {
+interface InputProps {
   id: string;
   value: string;
   onChange: (value: string) => void;
-  readOnly?: boolean;
-  mandatory?: boolean;
-  maxLength?: number;
+  type?: string;
   placeholder?: string;
-  rows?: number;
   style?: React.CSSProperties;
   className?: string;
 }
 
-export function TextArea({
+export function Input({
   id,
   value,
   onChange,
-  readOnly = false,
-  mandatory,
-  maxLength,
+  type = 'text',
   placeholder,
-  rows = 4,
   style,
   className,
-}: TextAreaProps): React.ReactElement {
+}: InputProps): React.ReactElement {
   const theme = useTheme();
 
-  const textAreaStyle: React.CSSProperties = {
+  const inputStyle: React.CSSProperties = {
     display: 'block',
     width: '100%',
-    padding: `${theme.spacingSm} ${theme.inputPaddingHorizontal}`,
+    height: theme.inputHeight,
+    padding: `0 ${theme.inputPaddingHorizontal}`,
     fontFamily: theme.fontFamily,
     fontSize: theme.fontSizeBase,
     color: theme.colorText,
@@ -40,22 +35,17 @@ export function TextArea({
     borderRadius: theme.borderRadius,
     boxSizing: 'border-box',
     outline: 'none',
-    resize: 'vertical',
-    lineHeight: theme.lineHeightBase,
     ...style,
   };
 
   return (
-    <textarea
+    <input
       id={id}
+      type={type}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      readOnly={readOnly}
-      maxLength={maxLength}
       placeholder={placeholder}
-      rows={rows}
-      required={mandatory}
-      style={textAreaStyle}
+      style={inputStyle}
       className={className}
     />
   );

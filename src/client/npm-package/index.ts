@@ -24,11 +24,9 @@ export type { IconName } from './components/atoms/Icon';
 export { Spinner } from './components/atoms/Spinner';
 
 // Atoms — inputs
-export { TextInput } from './components/atoms/TextInput';
-export { TextArea } from './components/atoms/TextArea';
+export { Input } from './components/atoms/Input';
 export { Checkbox } from './components/atoms/Checkbox';
-export { SelectInput } from './components/atoms/SelectInput';
-export type { SelectOption } from './components/atoms/SelectInput';
+export { Dropdown } from './components/atoms/Dropdown';
 export { Field } from './components/atoms/Field';
 export type { FieldProps } from './components/atoms/Field';
 

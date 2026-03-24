@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useTheme } from '../../context/ThemeContext';
-import { TextInput } from '../atoms/TextInput';
+import { Input } from '../atoms/Input';
 import { Icon } from '../atoms/Icon';
 
 export interface SearchBarProps {
@@ -98,7 +98,7 @@ export function SearchBar({
       <span style={searchIconStyle}>
         <Icon name="search" size={theme.iconSizeDefault} color={theme.colorTextMuted} />
       </span>
-      <TextInput
+      <Input
         id="search-bar"
         value={internalValue}
         onChange={handleChange}

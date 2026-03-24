@@ -20,7 +20,7 @@ export function StringFieldPage(): React.ReactElement {
   return (
     <PageLayout
       title="Field — string type"
-      description="Field molecule rendering a single-line text input for string values ≤ 255 characters. Pass type='string' and the component resolves to TextInput wrapped in FieldWrapper."
+      description="Field rendering a single-line text input for string values ≤ 255 characters. Pass type='string' and the component resolves to an Input wrapped in FieldWrapper."
       sections={[
         {
           title: 'Preview',

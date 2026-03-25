@@ -116,6 +116,19 @@ export interface SaveResult {
   isNew: boolean;
 }
 
+export interface FormSection {
+  title?: string;            // Optional section header
+  columns: FieldDefinition[][];  // Each inner array is a column; fields render top-to-bottom
+}
+
+export interface FormButton {
+  label: string;
+  onClick: () => void;
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
+  disabled?: boolean;
+  loading?: boolean;
+}
+
 // ---------------------------------------------------------------------------
 // Error
 // ---------------------------------------------------------------------------

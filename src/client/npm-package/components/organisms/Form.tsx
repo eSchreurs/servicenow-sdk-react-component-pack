@@ -9,6 +9,8 @@ import * as RecordService from '../../services/RecordService';
 import {
   FieldData,
   FieldDefinition,
+  FormButton,
+  FormSection,
   SaveResult,
 } from '../../types/index';
 
@@ -17,10 +19,12 @@ import {
 // ---------------------------------------------------------------------------
 
 export interface FormProps {
-  columns: FieldDefinition[][];    // Each inner array is a column; fields render top-to-bottom
+  sections: FormSection[];         // One or more sections, each with optional title and columns
+  title?: string;                  // Optional form title rendered above all sections
   readOnly?: boolean;              // Makes entire form read-only (default: false)
   showSaveButton?: boolean;        // Default: true
   showCancelButton?: boolean;      // Default: false
+  extraButtons?: FormButton[];     // Additional buttons rendered alongside Save / Cancel
   onSave?: (results: SaveResult[]) => void;
   onCancel?: () => void;
   onError?: (error: Error) => void;
@@ -157,8 +161,11 @@ function formReducer(state: FormState, action: FormAction): FormState {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function flattenDefs(columns: FieldDefinition[][]): FieldDefinition[] {
-  return columns.reduce<FieldDefinition[]>((acc, col) => acc.concat(col), []);
+function flattenDefs(sections: FormSection[]): FieldDefinition[] {
+  return sections.reduce<FieldDefinition[]>(
+    (acc, section) => section.columns.reduce<FieldDefinition[]>((a, col) => a.concat(col), acc),
+    [],
+  );
 }
 
 function formRecordKey(table: string, field: string): string {
@@ -170,10 +177,12 @@ function formRecordKey(table: string, field: string): string {
 // ---------------------------------------------------------------------------
 
 export function Form({
-  columns,
+  sections,
+  title,
   readOnly = false,
   showSaveButton = true,
   showCancelButton = false,
+  extraButtons,
   onSave,
   onCancel,
   onError,
@@ -192,7 +201,7 @@ export function Form({
   useEffect(() => {
     dispatch({ type: 'LOAD_START' });
 
-    const allDefs = flattenDefs(columns);
+    const allDefs = flattenDefs(sections);
 
     // Group unique tables → one RhinoService call per table
     const tableToFields = new Map<string, string[]>();
@@ -276,7 +285,7 @@ export function Form({
   // ---------------------------------------------------------------------------
 
   const handleSave = useCallback(async () => {
-    const allDefs = flattenDefs(columns);
+    const allDefs = flattenDefs(sections);
 
     // Validate: mandatory, not read-only, visible, and empty value
     const failingKeys: string[] = [];
@@ -344,7 +353,7 @@ export function Form({
       dispatch({ type: 'SAVE_ERROR', error });
       onError?.(error);
     }
-  }, [columns, state.metadata, state.formRecord, readOnly, onSave, onError]);
+  }, [sections, state.metadata, state.formRecord, readOnly, onSave, onError]);
 
   // ---------------------------------------------------------------------------
   // Rendering helpers
@@ -379,12 +388,26 @@ export function Form({
     );
   }
 
-  const columnCount = columns.length;
-  const gridStyle: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: `repeat(${columnCount}, 1fr)`,
-    gap: theme_.spacingLg,
+  const formTitleStyle: React.CSSProperties = {
+    fontFamily: theme_.fontFamily,
+    fontSize: theme_.fontSizeLarge,
+    fontWeight: theme_.fontWeightBold,
+    color: theme_.colorText,
+    margin: 0,
     marginBottom: theme_.spacingLg,
+    paddingBottom: theme_.spacingMd,
+    borderBottom: `${theme_.borderWidth} solid ${theme_.colorBorder}`,
+  };
+
+  const sectionTitleStyle: React.CSSProperties = {
+    fontFamily: theme_.fontFamily,
+    fontSize: theme_.fontSizeBase,
+    fontWeight: theme_.fontWeightMedium,
+    color: theme_.colorText,
+    margin: 0,
+    marginBottom: theme_.spacingMd,
+    paddingBottom: theme_.spacingSm,
+    borderBottom: `${theme_.borderWidth} solid ${theme_.colorBorder}`,
   };
 
   const actionAreaStyle: React.CSSProperties = {
@@ -402,67 +425,79 @@ export function Form({
 
   const isSaving = state.status === 'saving';
 
+  function renderField(def: FieldDefinition): React.ReactElement | null {
+    if (def.visible === false) return null;
+
+    const key = formRecordKey(def.table, def.field);
+    const meta = state.metadata[def.field];
+    const entry = state.formRecord[key] ?? { value: '', displayValue: '' };
+
+    const effectiveMandatory = (meta?.mandatory ?? false) || (def.mandatory ?? false);
+    const effectiveReadOnly = (meta?.readOnly ?? false) || (def.readOnly ?? false) || readOnly;
+    const label = def.label ?? meta?.label ?? def.field;
+    const dependentOnField = meta?.dependentOnField;
+    const dependentValue = dependentOnField
+      ? state.formRecord[formRecordKey(def.table, dependentOnField)]?.value
+      : undefined;
+    const reactKey = `${def.table}.${def.sysId}.${def.field}`;
+
+    return (
+      <Field
+        key={reactKey}
+        name={def.field}
+        label={label}
+        type={meta?.type ?? 'string'}
+        value={entry.value}
+        displayValue={entry.displayValue}
+        mandatory={effectiveMandatory}
+        readOnly={effectiveReadOnly}
+        hasError={state.validationErrors.includes(key)}
+        onChange={(fieldName, value, displayValue) =>
+          handleFieldChange(fieldName, value, displayValue, def)
+        }
+        maxLength={meta?.maxLength}
+        isChoiceField={meta?.isChoiceField}
+        choices={meta?.choices}
+        dependentOnField={dependentOnField}
+        dependentValue={dependentValue}
+        reference={meta?.reference}
+        referenceQual={meta?.referenceQual}
+        filter={def.reference?.filter}
+        searchFields={def.reference?.searchFields}
+        previewFields={def.reference?.previewFields}
+        table={def.table}
+        sysId={def.sysId}
+      />
+    );
+  }
+
   return (
     <div style={{ fontFamily: theme_.fontFamily, ...style }} className={className}>
-      {/* Field grid */}
-      <div style={gridStyle}>
-        {columns.map((col, colIndex) => (
-          <div key={colIndex} style={{ display: 'flex', flexDirection: 'column', gap: theme_.spacingMd }}>
-            {col.map((def) => {
-              if (def.visible === false) return null;
+      {/* Form title */}
+      {title && <h2 style={formTitleStyle}>{title}</h2>}
 
-              const key = formRecordKey(def.table, def.field);
-              const meta = state.metadata[def.field];
-              const entry = state.formRecord[key] ?? { value: '', displayValue: '' };
+      {/* Sections */}
+      {sections.map((section, sectionIndex) => {
+        const columnCount = section.columns.length;
+        const gridStyle: React.CSSProperties = {
+          display: 'grid',
+          gridTemplateColumns: `repeat(${columnCount}, 1fr)`,
+          gap: theme_.spacingLg,
+        };
 
-              // Effective values — database wins, developer may only add restrictions
-              const effectiveMandatory = (meta?.mandatory ?? false) || (def.mandatory ?? false);
-              const effectiveReadOnly =
-                (meta?.readOnly ?? false) || (def.readOnly ?? false) || readOnly;
-
-              // Label: developer override → metadata label → raw field name
-              const label = def.label ?? meta?.label ?? def.field;
-
-              // Dependent value: resolve from formRecord using dependentOnField
-              const dependentOnField = meta?.dependentOnField;
-              const dependentValue = dependentOnField
-                ? state.formRecord[formRecordKey(def.table, dependentOnField)]?.value
-                : undefined;
-
-              const reactKey = `${def.table}.${def.sysId}.${def.field}`;
-
-              return (
-                <Field
-                  key={reactKey}
-                  name={def.field}
-                  label={label}
-                  type={meta?.type ?? 'string'}
-                  value={entry.value}
-                  displayValue={entry.displayValue}
-                  mandatory={effectiveMandatory}
-                  readOnly={effectiveReadOnly}
-                  hasError={state.validationErrors.includes(key)}
-                  onChange={(fieldName, value, displayValue) =>
-                    handleFieldChange(fieldName, value, displayValue, def)
-                  }
-                  maxLength={meta?.maxLength}
-                  isChoiceField={meta?.isChoiceField}
-                  choices={meta?.choices}
-                  dependentOnField={dependentOnField}
-                  dependentValue={dependentValue}
-                  reference={meta?.reference}
-                  referenceQual={meta?.referenceQual}
-                  filter={def.reference?.filter}
-                  searchFields={def.reference?.searchFields}
-                  previewFields={def.reference?.previewFields}
-                  table={def.table}
-                  sysId={def.sysId}
-                />
-              );
-            })}
+        return (
+          <div key={sectionIndex} style={{ marginBottom: theme_.spacingXl }}>
+            {section.title && <h3 style={sectionTitleStyle}>{section.title}</h3>}
+            <div style={gridStyle}>
+              {section.columns.map((col, colIndex) => (
+                <div key={colIndex} style={{ display: 'flex', flexDirection: 'column', gap: theme_.spacingMd }}>
+                  {col.map((def) => renderField(def))}
+                </div>
+              ))}
+            </div>
           </div>
-        ))}
-      </div>
+        );
+      })}
 
       {/* Action area */}
       <div style={actionAreaStyle}>
@@ -526,6 +561,17 @@ export function Form({
               Cancel
             </Button>
           )}
+          {extraButtons?.map((btn, i) => (
+            <Button
+              key={i}
+              onClick={btn.onClick}
+              disabled={btn.disabled ?? false}
+              loading={btn.loading ?? false}
+              variant={btn.variant ?? 'secondary'}
+            >
+              {btn.label}
+            </Button>
+          ))}
         </div>
       </div>
     </div>

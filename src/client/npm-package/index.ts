@@ -59,5 +59,7 @@ export type {
   BaseFieldProps,
   FieldDefinition,
   SaveResult,
+  FormSection,
+  FormButton,
 } from './types/index';
 export { ServiceNowError } from './types/index';

@@ -1,11 +1,22 @@
 # Phase 8 — Form Organism
 
 ## Goal
-Build the `Form` organism — the primary deliverable of this entire project. It composes all molecules into a fully data-driven, configurable form that reads from and writes to ServiceNow records.
+Build the `Form` organism — the primary deliverable of this entire project. It composes the `Field` component into a fully data-driven, configurable form that reads from and writes to ServiceNow records.
 
 ## Reference Documents
 - Form Component Spec (`docs/specs/form-component-spec.md`) — read in full
 - Service Layer Spec (`docs/specs/service-layer-spec.md`) — Sections 4, 5
+- Project Startup Document (`docs/specs/project-startup.md`) — coding standards and hard rules
+
+---
+
+## Before Starting
+
+Two small gaps in the existing codebase must be closed before writing Form code:
+
+1. **Add `ServiceNowProvider` to `ComponentExplorer.tsx`** — wrap the root alongside `ThemeProvider`. The Form reads `language` from `useServiceNow()` and will silently use the default without the provider, but structurally it must be there.
+
+2. **Extract `resolveFieldKind` from `Field.tsx`** — move the `resolveKind` function and its `InputKind` type into `src/client/npm-package/components/atoms/_internal/resolveFieldKind.ts` and import it back into `Field.tsx`. This makes the resolution logic independently readable and testable.
 
 ---
 
@@ -13,7 +24,27 @@ Build the `Form` organism — the primary deliverable of this entire project. It
 
 ### `src/client/components/organisms/Form.tsx`
 
-The Form organism must use `useReducer` for all state management. All state transitions are expressed as dispatched actions.
+The Form organism must use `useReducer` for all state management. No `useState` for form state — every state transition must be expressed as a dispatched action.
+
+---
+
+## State Shape
+
+Design the state shape before writing the reducer.
+
+```typescript
+interface FormState {
+  status: 'loading' | 'ready' | 'saving' | 'error'
+  metadata: Record<string, FieldData>          // keyed by field name
+  formRecord: Record<string, {                 // keyed by 'table.field'
+    value: string
+    displayValue: string
+  }>
+  validationErrors: string[]                   // 'table.field' keys of fields with errors
+  saveError: string | null
+  loadError: string | null
+}
+```
 
 ---
 
@@ -32,41 +63,49 @@ type FormAction =
   | { type: 'DISMISS_ERROR' }
 ```
 
-`LOAD_SUCCESS` carries both `metadata` (from `RhinoService.getRecordMetadata()`) and `record` (from `RecordService.getRecord()`). The reducer merges these into a single consistent form state.
+`LOAD_SUCCESS` carries both `metadata` (from `RhinoService`) and `record` (from `RecordService`). The reducer must merge these into the initial `formRecord` in a single atomic transition — not two separate dispatches.
 
 ---
 
 ## Data Loading
 
 On mount:
-1. Flatten all `FieldDefinition` entries from `columns`
-2. Group by **unique table** → call `RhinoService.getRecordMetadata(table, fields)` once per unique table. This returns all field metadata and choices in one round-trip.
-3. Group by **unique `table + sysId`** (non-empty sysId) → call `RecordService.getRecord(table, sysId, fields)` once per unique record to fetch current values.
-4. All fetches parallelised with `Promise.all`
-5. Apply `defaultValue` for new records (`sysId = ''`) only if field has no loaded value
-6. Build initial `formRecord` — keyed by `table.field` — from loaded record data. Every declared field must be present; fields with no loaded value initialised as `{ value: '', displayValue: '' }`
-7. Dispatch `LOAD_SUCCESS` with merged metadata and record, or `LOAD_ERROR` on any failure
-
-Pass `language` from `useServiceNow()` to `RhinoService.getRecordMetadata()`.
+1. Flatten all `FieldDefinition` entries from `columns`.
+2. Group by **unique table** → call `RhinoService.getRecordMetadata(table, fields, language)` once per unique table. Read `language` from `useServiceNow()`.
+3. Group by **unique `table + sysId`** (non-empty sysId only) → call `RecordService.getRecord(table, sysId, fields)` once per unique record.
+4. Parallelise all fetches with `Promise.all`.
+5. Apply `defaultValue` from `FieldDefinition` for new records (`sysId = ''`) — only if the field has no loaded value.
+6. Build initial `formRecord` keyed by `table.field`. Every declared field must be present; fields with no loaded value initialise as `{ value: '', displayValue: '' }`.
+7. Dispatch `LOAD_SUCCESS` with merged metadata and record, or `LOAD_ERROR` on any failure.
 
 ---
 
 ## Field Rendering
 
-The Form resolves the correct molecule per field using this priority:
-1. `isChoiceField === true` in metadata → `ChoiceField`
-2. Switch on `type`:
-   - `string` ≤ 255 → `StringField`
-   - `string` > 255, `text`, `html`, `translated_text` → `TextAreaField`
-   - `integer`, `decimal`, `float`, `currency` → `NumberField`
-   - `boolean` → `CheckboxField`
-   - `reference` → `ReferenceField`
-   - `glide_date_time` → `DateTimeField` mode=datetime
-   - `glide_date` → `DateTimeField` mode=date
-   - `glide_time` → `DateTimeField` mode=time
-   - All others → `StringField`
+The Form renders `<Field />` for each declared field. It passes metadata-derived props alongside the field's current value from `formRecord`.
 
-Each field is rendered with React key: `table + '.' + sysId + '.' + field`
+Props passed to each `Field`:
+- `name` — the field name from `FieldDefinition`
+- `label` — from `FieldData.label`, or `FieldDefinition.label` if the developer supplied an override, or the raw field name if metadata was not found
+- `type` — from `FieldData.type`
+- `isChoiceField` — from `FieldData.isChoiceField`
+- `value` / `displayValue` — from `formRecord[table.field]`
+- `mandatory` — effective value: `FieldData.mandatory OR FieldDefinition.mandatory`
+- `readOnly` — effective value: `FieldData.readOnly OR FieldDefinition.readOnly OR formProps.readOnly`
+- `hasError` — true if this field's key is in `state.validationErrors`
+- `maxLength` — from `FieldData.maxLength`
+- `choices` — from `FieldData.choices`
+- `dependentOnField` — from `FieldData.dependentOnField`
+- `dependentValue` — resolved from `formRecord` using the parent field name
+- `reference` — from `FieldData.reference`
+- `referenceQual` — from `FieldData.referenceQual`
+- `filter` — from `FieldDefinition.reference.filter`
+- `searchFields` — from `FieldDefinition.reference.searchFields`
+- `previewFields` — from `FieldDefinition.reference.previewFields`
+- `table` / `sysId` — from `FieldDefinition`
+- `onChange` — the Form's field change handler
+
+Each `Field` rendered with React key: `table + '.' + sysId + '.' + field`
 
 ---
 
@@ -74,94 +113,111 @@ Each field is rendered with React key: `table + '.' + sysId + '.' + field`
 
 Effective mandatory/readOnly = `databaseValue OR developerOverride`
 
-- `mandatory: true` in metadata → always mandatory, developer cannot override to false
-- `mandatory: false` in metadata → developer may set to true
-- Same for `readOnly`
+- `mandatory: true` in metadata → always mandatory regardless of developer override
+- `mandatory: false` in metadata → developer may add `mandatory: true`
+- Same logic for `readOnly`
+- Form-level `readOnly={true}` overrides all fields to read-only regardless of metadata or field-level overrides
 
 ---
 
 ## Field Change Handling
 
 On every field change (`FIELD_CHANGED`):
-- Update `formRecord` in state
-- Re-filter dependent `ChoiceField` options
-- Auto-clear invalid dependent choice values
-- Call `onFieldChange` prop AFTER state is updated
+1. Update `formRecord` with the new value and displayValue.
+2. Find any fields whose `dependentOnField` matches the changed field name.
+3. For each such field, check if its current value is still a valid choice given the new parent value. If not, clear it to `''`.
+4. Call `onFieldChange` prop AFTER state has been updated.
 
 ---
 
 ## Validation
 
 On save attempt only — never on field change:
-- Fields where effective `mandatory = true` AND `readOnly = false` AND `visible = true` must have non-empty value
-- Invisible fields excluded from validation
-- On failure: dispatch `VALIDATION_FAILED`, show summary above action buttons, apply red border to failing fields via `hasError` prop
-- Errors clear only on successful save or explicit dismiss
+- A field fails validation if: effective `mandatory = true` AND effective `readOnly = false` AND `visible ≠ false` AND `value === ''`.
+- On failure: dispatch `VALIDATION_FAILED` with the list of failing field keys, show a summary message above the action buttons.
+- `hasError={true}` is derived at render time from `state.validationErrors` — not stored per-field.
+- Validation errors clear only on successful save or explicit user dismiss (`DISMISS_ERROR`).
 
 ---
 
 ## Saving
 
-- Group fields by `table + sysId`
-- Only include fields explicitly declared in `FieldDefinition` — never the full record
-- Invisible fields excluded from save payload
-- Empty `sysId` → `RecordService.createRecord()`
-- Non-empty `sysId` → `RecordService.updateRecord()`
-- All saves dispatched in parallel
-- `onSave` called with `SaveResult[]` on full success
-- Partial failures: communicate which records succeeded and failed, call `onError`
+- Group declared fields by `table + sysId`.
+- Build each save payload from `formRecord`: only declared field names, only stored values — never display values, never invisible fields, never fields not declared in `FieldDefinition`.
+- Empty `sysId` → `RecordService.createRecord()`.
+- Non-empty `sysId` → `RecordService.updateRecord()`.
+- Dispatch all save calls in parallel with `Promise.all`.
+- On full success: dispatch `SAVE_SUCCESS`, call `onSave` with `SaveResult[]`.
+- On partial failure: identify which records succeeded and which failed, surface specific error messaging, call `onError`.
 
 ---
 
 ## Layout
 
-- CSS grid, columns derived from `columns.length`
-- Fields fill top-to-bottom within each column, left-to-right across columns
-- Save/Cancel buttons below the grid
-- `readOnly={true}` at form level: all fields read-only, Save button hidden
+- CSS grid layout. Column count = `columns.length`.
+- Fields render top-to-bottom within each column.
+- Save and Cancel buttons rendered below the grid.
+- `readOnly={true}` at form level: all fields read-only, Save button hidden regardless of `showSaveButton`.
 
 ---
 
 ## Invisible Fields
 
-- Not rendered
-- Still tracked in state and `formRecord`
-- Excluded from validation and save payload
+- Not rendered in the DOM.
+- Still present in `formRecord` state.
+- Excluded from validation.
+- Excluded from save payload.
 
 ---
 
 ## Loading & Error States
 
-- Single `Spinner` while loading — no partial field rendering
-- Full-form error state on load failure
-- Save error shown above action buttons
+- Render a single `Spinner` while `status === 'loading'` — no partial field rendering.
+- Render a full-form error state when `status === 'error'` and `loadError` is set — do not render fields.
+- Render save error above action buttons when `saveError` is set.
+- Render validation summary above action buttons when `validationErrors` is non-empty.
 
 ---
 
 ## Context Usage
 
-- Read `language` from `useServiceNow()` and pass to `RhinoService.getRecordMetadata()`
-- `ReferenceField` instances read theme via `useTheme()` themselves — Form does not pass theme
+- Read `language` from `useServiceNow()` and pass to `RhinoService.getRecordMetadata()`.
+- `Field` components read theme via `useTheme()` themselves — Form does not pass theme props.
+
+---
+
+## Component Explorer Page
+
+Add a `FormPage.tsx` to `src/client/component-explorer/pages/organisms/`. It must show:
+- A live `Form` instance pointed at a real or plausible demo configuration
+- The full props table
+- A usage code snippet
+
+Update `ComponentExplorer.tsx` to include the Form page in the navigation under an "Organisms" group.
 
 ---
 
 ## What NOT to Do
 - Do not use `useState` for form state — `useReducer` only
-- Do not include non-declared fields in save payload
+- Do not include non-declared fields in the save payload
 - Do not validate on field change — only on save attempt
 - Do not call `MetadataService` — it does not exist; use `RhinoService.getRecordMetadata()`
-- Do not implement a dirty flag strategy for reference qualifiers — `referenceQual` is static and passed as-is to `SearchService`
+- Do not pass display values to `RecordService.createRecord()` or `RecordService.updateRecord()`
+- Do not render fields while loading — show `Spinner` only
 
 ---
 
 ## Done When
 - `Form.tsx` exists in `src/client/components/organisms/`
-- Uses `useReducer` with all defined action types
+- `ServiceNowProvider` wraps the Component Explorer root
+- `resolveFieldKind` has been extracted to `_internal/resolveFieldKind.ts`
+- Form uses `useReducer` with all defined action types
 - Data loading calls `RhinoService.getRecordMetadata()` once per unique table and `RecordService.getRecord()` once per unique `table+sysId`, parallelised
-- `LOAD_SUCCESS` correctly merges metadata and record into form state
-- Field type resolution uses `isChoiceField` boolean, then type switch
-- Override rules implemented correctly (database wins for restrictions)
-- Validation fires only on save, applies `hasError` to failing fields
-- Save groups by `table + sysId`, only saves declared fields
+- `LOAD_SUCCESS` merges metadata and record into initial form state atomically
+- Override rules implemented correctly: `effectiveState = databaseValue OR developerOverride`
+- Validation fires only on save attempt, clears on success or explicit dismiss
+- Save payload contains only declared, visible fields with stored values only
 - Invisible fields tracked in state but excluded from validation and save
-- Compiles without errors
+- `onFieldChange` fires after state update, with dependent choice clearing applied first
+- Form page added to Component Explorer
+- Everything compiles without errors

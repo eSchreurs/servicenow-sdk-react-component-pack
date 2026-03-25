@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ThemeProvider, useTheme } from '../npm-package/context/ThemeContext';
+import { ServiceNowProvider } from '../npm-package/context/ServiceNowContext';
 import { Text } from '../npm-package/components/atoms/Text';
 
 // Atom pages — foundation
@@ -30,6 +31,9 @@ import { ReferenceFieldPage } from './pages/molecules/ReferenceFieldPage';
 
 // Molecule pages
 import { SearchBarPage } from './pages/molecules/SearchBarPage';
+
+// Organism pages
+import { FormPage } from './pages/organisms/FormPage';
 
 // ---------------------------------------------------------------------------
 // Nav structure — add new pages here as phases are completed
@@ -92,7 +96,12 @@ const NAV_GROUPS: NavGroup[] = [
       { key: 'search-bar', label: 'SearchBar' },
     ],
   },
-  // Organisms (to be added)
+  {
+    title: 'Organisms',
+    items: [
+      { key: 'form', label: 'Form' },
+    ],
+  },
 ];
 
 const PAGE_MAP: Record<PageKey, React.ReactElement> = {
@@ -120,6 +129,8 @@ const PAGE_MAP: Record<PageKey, React.ReactElement> = {
   'reference-field': <ReferenceFieldPage />,
   // Molecule pages
   'search-bar': <SearchBarPage />,
+  // Organism pages
+  'form': <FormPage />,
 };
 
 const DEFAULT_PAGE: PageKey = 'text';
@@ -271,7 +282,9 @@ function ExplorerShell(): React.ReactElement {
 export function ComponentExplorer(): React.ReactElement {
   return (
     <ThemeProvider>
-      <ExplorerShell />
+      <ServiceNowProvider>
+        <ExplorerShell />
+      </ServiceNowProvider>
     </ThemeProvider>
   );
 }

@@ -40,6 +40,10 @@ export { Popover } from './components/atoms/Popover';
 export { SearchBar } from './components/molecules/SearchBar';
 export type { SearchBarProps } from './components/molecules/SearchBar';
 
+// Organisms
+export { Form } from './components/organisms/Form';
+export type { FormProps } from './components/organisms/Form';
+
 // Types
 export type {
   RawFieldValue,
@@ -53,5 +57,7 @@ export type {
   ChoiceEntry,
   ReferenceSearchResult,
   BaseFieldProps,
+  FieldDefinition,
+  SaveResult,
 } from './types/index';
 export { ServiceNowError } from './types/index';

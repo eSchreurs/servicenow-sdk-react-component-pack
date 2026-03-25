@@ -86,6 +86,37 @@ export interface BaseFieldProps {
 }
 
 // ---------------------------------------------------------------------------
+// Form Types
+// ---------------------------------------------------------------------------
+
+export interface FieldDefinition {
+  // Required
+  table: string;
+  sysId: string;    // Empty string '' for new records
+  field: string;
+
+  // Optional overrides (developer overrides can only add restrictions, not remove them)
+  label?: string;
+  mandatory?: boolean;
+  readOnly?: boolean;
+  visible?: boolean;       // Default: true. When false, not rendered, excluded from validation/save
+  defaultValue?: string;   // Pre-populate for new records (sysId = '') only
+
+  // Reference field config
+  reference?: {
+    searchFields?: string[];
+    previewFields?: string[];
+    filter?: string;       // Reactive — always uses latest value when searching
+  };
+}
+
+export interface SaveResult {
+  table: string;
+  sysId: string;   // For new records, the newly created sys_id
+  isNew: boolean;
+}
+
+// ---------------------------------------------------------------------------
 // Error
 // ---------------------------------------------------------------------------
  

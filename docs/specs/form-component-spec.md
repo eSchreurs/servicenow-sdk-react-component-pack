@@ -1,6 +1,6 @@
 # Form Component Spec
 
-> **Instructions for the AI Agent:** This document defines the full specification for the `Form` organism and all field molecules it depends on. Read it entirely before writing any code. All decisions made here take precedence over any assumptions. Refer back to the Project Startup Document for project-wide rules and constraints, and to the Service Layer Spec for how data is loaded.
+> **Instructions for the AI Agent:** This document defines the full specification for the `Form` organism and the `Field` component it depends on. Read it entirely before writing any code. All decisions made here take precedence over any assumptions. Refer back to the Project Startup Document for project-wide rules and constraints, and to the Service Layer Spec for how data is loaded.
 
 ---
 
@@ -12,49 +12,48 @@ Fields may come from **any number of tables and records**. Each field is indepen
 
 ---
 
-## 2. Field Architecture
+## 2. The Field Component
 
-### 2.1 Hierarchy
+### 2.1 Overview
 
-Fields follow a two-level structure:
+`Field` is a single unified component that handles all field types. The Form renders `<Field />` for every declared field — the correct input is resolved automatically at render time from the field's metadata.
 
-- **`Field` (abstract base molecule)** — owns all shared field concerns: value, display value, onChange, effective mandatory state, effective readOnly state, validation error state, and the label/validation wrapper (`FieldWrapper` atom). Never rendered directly.
-- **Typed field molecules** — each extends `Field` and renders the appropriate input atom for its type. These are the components the `Form` renders.
+This is a deliberate architectural choice. ServiceNow field types are metadata-driven and can change in the backend (e.g. a plain string field gaining a choice list). Because `Field` resolves its input type from live `FieldData` at render time, these changes are reflected in the UI automatically with no frontend code changes required.
 
-| Molecule | Renders | Used when |
-|----------|---------|-----------|
-| `StringField` | `TextInput` atom | String fields ≤ 255 chars |
-| `TextAreaField` | `TextArea` atom | String fields > 255 chars, or `text` type |
-| `NumberField` | `TextInput` (number) | Integer, decimal, float types |
-| `CheckboxField` | `Checkbox` atom | Boolean type |
-| `ChoiceField` | `SelectInput` atom | Any field with `isChoiceField: true` in metadata |
-| `ReferenceField` | `ReferenceInput` atom | Reference type fields |
-| `DateTimeField` | Native date/time input | Date, datetime, time types |
+`Field` is located at `src/client/npm-package/components/atoms/Field.tsx`. It composes the following internal primitives:
+
+- `_internal/FieldWrapper` — label, mandatory asterisk, error border wrapper
+- `_internal/ReferenceInput` — the typeahead search input used for reference fields
+- `_internal/dateHelpers` — pure format conversion functions for date/time fields
+- `Input` atom — single-line text input
+- `Checkbox` atom — boolean toggle
+- `Dropdown` atom — choice select input
+- Native `<input type="datetime-local|date|time">` — date/time inputs
 
 ### 2.2 Type Resolution
 
-The `Form` organism inspects each field's `FieldData` and instantiates the correct typed field molecule. Resolution follows this priority order:
+`Field` resolves the correct input kind via `_internal/resolveFieldKind.ts`. Resolution follows this priority order:
 
-1. If `isChoiceField` is true in metadata → `ChoiceField`
+1. If `isChoiceField` is true in metadata → renders `Dropdown`
 2. Otherwise, switch on `type`:
-   - `string` with `maxLength > 255` → `TextAreaField`
-   - `string` → `StringField`
-   - `text`, `html`, `translated_text` → `TextAreaField`
-   - `integer`, `decimal`, `float`, `currency` → `NumberField`
-   - `boolean` → `CheckboxField`
-   - `reference` → `ReferenceField`
-   - `glide_date_time` → `DateTimeField` (mode: datetime)
-   - `glide_date` → `DateTimeField` (mode: date)
-   - `glide_time` → `DateTimeField` (mode: time)
-   - All others → `StringField` (safe fallback)
+   - `string` with `maxLength > 255` → renders `TextArea`
+   - `string` → renders `Input`
+   - `text`, `html`, `translated_text` → renders `TextArea`
+   - `integer`, `decimal`, `float`, `currency` → renders `Input` (type="number")
+   - `boolean` → renders `Checkbox`
+   - `reference` → renders `ReferenceInput` (with popover orchestration)
+   - `glide_date_time` → renders native datetime-local input
+   - `glide_date` → renders native date input
+   - `glide_time` → renders native time input
+   - All others → renders `Input` (safe fallback)
 
 ### 2.3 FieldWrapper
 
-`FieldWrapper` is the shared structural wrapper rendered by every field molecule.
+`FieldWrapper` is the structural wrapper rendered by `Field` for every input type.
 
 - Renders the field `<label>` element associated with the input via `htmlFor`.
 - Renders a **red asterisk (\*)** after the label text when `mandatory` is true.
-- Wraps the input in a container that applies a **red border** when `hasError` is true.
+- Wraps the input in a container that applies a **red outline** when `hasError` is true.
 
 ```typescript
 interface FieldWrapperProps {
@@ -63,24 +62,49 @@ interface FieldWrapperProps {
   mandatory: boolean
   hasError: boolean
   children: React.ReactNode
+  style?: React.CSSProperties
+  className?: string
+  containerStyle?: React.CSSProperties  // optional override for the input container div
 }
 ```
 
-### 2.4 Base Field Props
+### 2.4 Field Props
 
 ```typescript
-interface BaseFieldProps {
+interface FieldProps {
+  // Core — always required
   name: string
   label: string
+  type: string                  // ServiceNow field type from FieldData
   value: string
-  displayValue: string
+  displayValue?: string         // Required for reference fields; optional for others
   mandatory: boolean
   readOnly: boolean
   hasError: boolean
-  maxLength?: number
   onChange: (field: string, value: string, displayValue: string) => void
+
+  // Shared optional
+  maxLength?: number
   style?: React.CSSProperties
   className?: string
+
+  // Choice field props — required when isChoiceField is true
+  isChoiceField?: boolean
+  choices?: ChoiceEntry[]
+  dependentOnField?: string     // informational only — filtering uses dependentValue
+  dependentValue?: string       // current stored value of the parent field
+
+  // Date/time props
+  mode?: 'datetime' | 'date' | 'time'   // normally derived from type; override if needed
+
+  // Reference field props — required when type === 'reference'
+  reference?: string            // referenced table name from FieldData
+  referenceQual?: string        // qualifier string from FieldData — passed as-is to SearchService
+  filter?: string               // developer-supplied filter, ANDed with referenceQual
+  searchFields?: string[]
+  previewFields?: string[]
+  table?: string                // parent form record table (for info popover)
+  sysId?: string                // parent form record sysId (for info popover)
 }
 ```
 
@@ -92,7 +116,7 @@ interface BaseFieldProps {
 
 ## 3. Field Definition
 
-Every field passed to the form is a `FieldDefinition` object:
+Every field passed to the Form is a `FieldDefinition` object:
 
 ```typescript
 interface FieldDefinition {
@@ -210,9 +234,9 @@ Same logic applies to `readOnly`.
 On mount, the Form:
 
 1. Flattens all `FieldDefinition` entries from all columns.
-2. Groups by **unique table** → calls `RhinoService.getRecordMetadata(table, fields)` once per unique table. This returns all field metadata and choices in one round-trip per table.
+2. Groups by **unique table** → calls `RhinoService.getRecordMetadata(table, fields, language)` once per unique table. `language` is read from `useServiceNow()`. This returns all field metadata and choices in one round-trip per table.
 3. Groups by **unique `table + sysId`** (non-empty sysId) → calls `RecordService.getRecord(table, sysId, fields)` once per unique record to fetch current values.
-4. All fetches parallelised with `Promise.all` where possible.
+4. All fetches parallelised with `Promise.all`.
 5. Applies `defaultValue` from `FieldDefinition` for new records (`sysId = ''`). Only applied if the field has no loaded value.
 6. Builds the initial `formRecord` — a `Record<string, { value: string; displayValue: string }>` keyed by `table.field` — from the loaded record data. Every declared field must be present, with `{ value: '', displayValue: '' }` for fields with no loaded value.
 7. Renders a single `Spinner` for the entire form while loading.
@@ -226,26 +250,17 @@ On mount, the Form:
 
 Configured in sys_dictionary via `dependent_on_field`. Resolved entirely client-side after initial load.
 
-- The Form resolves the current value of the parent field from its internal state and passes it to `ChoiceField` as `dependentValue`.
-- `ChoiceField` filters its visible options to only those whose `dependentValue` matches, plus entries with no `dependentValue`.
-- If the currently selected choice is no longer valid after a parent field change, the Form clears the `ChoiceField`'s value in its `handleFieldChange` logic.
-
-**`ChoiceField` additional props:**
-```typescript
-interface ChoiceFieldProps extends BaseFieldProps {
-  choices: ChoiceEntry[]
-  dependentOnField?: string
-  dependentValue?: string
-}
-```
+- The Form resolves the current stored value of the parent field from its internal state and passes it to the dependent `Field` as `dependentValue`.
+- `Field` (when rendering a choice input) filters visible options to only those whose `dependentValue` matches, plus entries with no `dependentValue`. Matching always uses stored values — never display values.
+- If the currently selected choice is no longer valid after a parent field change, the Form clears the dependent field's value in its `FIELD_CHANGED` handling logic before calling `onFieldChange`.
 
 ### 7.2 Reference Field Dependencies
 
-Reference field `dependent_on_field` is **not resolved automatically**. The developer handles it via `reference.filter` and `onFieldChange`.
+Reference field `dependent_on_field` is **not resolved automatically**. The developer handles it via `reference.filter` on the `FieldDefinition` and `onFieldChange` on the Form.
 
 ### 7.3 Reference Qualifiers
 
-Qualifier data is returned as a `referenceQual` string in `FieldData` from `RhinoService.getRecordMetadata()`. The `ReferenceField` receives this as a prop and passes it directly to `SearchService.searchRecords()` as part of the filter. All three qualifier types are natively evaluated server-side by the Table API — no client-side evaluation is needed.
+Qualifier data is returned as a `referenceQual` string in `FieldData` from `RhinoService.getRecordMetadata()`. The Form passes this string to `Field` as `referenceQual`. `Field` passes it directly to `SearchService.searchRecords()` as part of the filter. All three qualifier types are natively evaluated server-side by the Table API — no client-side evaluation is needed.
 
 | `referenceQual` value | Behaviour |
 |---|---|
@@ -254,26 +269,13 @@ Qualifier data is returned as a `referenceQual` string in `FieldData` from `Rhin
 | `javascript:` expression (advanced) | Passed directly as filter, ANDed with `reference.filter` |
 | `null` / absent | No qualifier filter applied — only `reference.filter` used |
 
-**`ReferenceField` additional props:**
-```typescript
-interface ReferenceFieldProps extends BaseFieldProps {
-  reference: string           // Referenced table name
-  referenceQual?: string      // Qualifier string from FieldData — passed as-is to SearchService
-  filter?: string             // Developer-supplied filter from FieldDefinition.reference.filter
-  searchFields?: string[]
-  previewFields?: string[]
-  table: string               // Parent form record table (for info popover label fetching)
-  sysId: string               // Parent form record sysId
-}
-```
-
-When searching, the effective filter is always `referenceQual AND filter` when both are present, or whichever is non-null when only one is present.
+When searching, the effective filter is `referenceQual AND filter` when both are present, or whichever is non-null when only one is present.
 
 ---
 
-## 8. Field Type Behavior
+## 8. Field Type Behaviour
 
-### 8.1 ReferenceField
+### 8.1 Reference type
 
 #### States
 
@@ -281,15 +283,15 @@ When searching, the effective filter is always `referenceQual AND filter` when b
 |-------|-------------|
 | **Empty** | Input is typeable. Placeholder: "Type to search…" |
 | **Searching** | Dropdown shows results or loading indicator |
-| **Selected** | Display value shown, locked. Pen icon + "i" icon visible |
-| **Read-only** | Display value shown, locked. "i" icon visible if value present |
+| **Selected** | Display value shown, locked. Pen icon (left) + info icon (right) visible |
+| **Read-only** | Display value shown, locked. Info icon visible if value is present |
 
-#### Input behavior
+#### Input behaviour
 - Search triggers at ≥ 2 characters, debounced 300ms.
-- In-flight requests aborted when new search triggers.
+- In-flight requests aborted when a new search triggers.
 - **Pen icon** — clears value, returns to empty state, focus returned to input.
-- **"i" icon** — opens the info popover.
-- When `reference.filter` changes: abort in-flight search, clear dropdown results. Selected value is NOT auto-cleared.
+- **Info icon** — opens the info popover.
+- When `filter` changes: abort in-flight search, clear dropdown results. Selected value is NOT auto-cleared.
 
 #### Search
 - Calls `SearchService.searchRecords()` with effective filter.
@@ -297,8 +299,8 @@ When searching, the effective filter is always `referenceQual AND filter` when b
 - Results displayed as columns — display value always first/primary.
 
 #### Info popover
-- Without `previewFields`: fetches all non-`sys_`-prefixed fields from the referenced record, humanizes labels using `RecordService.getRecord()`.
-- With `previewFields`: fetches only those fields using labels from `RhinoService.getRecordMetadata()`.
+- Without `previewFields`: fetches all non-`sys_`-prefixed fields from the referenced record via `RecordService.getRecord()`, humanises field names as labels.
+- With `previewFields`: fetches only those fields via `RecordService.getRecord()`, fetches labels via `RhinoService.getRecordMetadata()`.
 - Always shows display values.
 
 #### onChange
@@ -306,27 +308,25 @@ Calls parent with `sys_id` as `value` and display name as `displayValue`.
 
 ---
 
-### 8.2 ChoiceField
+### 8.2 Choice type (isChoiceField)
 
 - Always includes a blank option **unless the field is mandatory AND already has a non-empty value**.
 - Options show display label; stored value tracked internally.
-- Filters by `dependentValue` client-side.
-- Read-only: renders as plain text (display label only).
+- Filters visible options by `dependentValue` client-side using stored values only — never display values.
+- Read-only: renders as plain text (display label of selected option).
 - `onChange`: calls parent with stored value and display label.
 
 ---
 
-### 8.3 DateTimeField
+### 8.3 Date/time types
 
-```typescript
-interface DateTimeFieldProps extends BaseFieldProps {
-  mode: 'datetime' | 'date' | 'time'
-}
-```
+Format conversion handles the mismatch between ServiceNow's stored format and the browser's native input format. All conversion logic lives in `_internal/dateHelpers.ts`.
 
-- `datetime` → `<input type="datetime-local">`
-- `date` → `<input type="date">`
-- `time` → `<input type="time">`
+| Type | Input element | Mode |
+|---|---|---|
+| `glide_date_time` | `<input type="datetime-local">` | `datetime` |
+| `glide_date` | `<input type="date">` | `date` |
+| `glide_time` | `<input type="time">` | `time` |
 
 **Format conversion:**
 - ServiceNow → browser: `YYYY-MM-DD HH:mm:ss` → `YYYY-MM-DDTHH:mm`
@@ -335,26 +335,51 @@ interface DateTimeFieldProps extends BaseFieldProps {
 
 ---
 
-### 8.4 NumberField
+### 8.4 Numeric types (`integer`, `decimal`, `float`, `currency`)
 
 - Renders `<input type="number">`.
-- `maxLength` enforced as character limit on the input string.
-- `onChange`: called with numeric string as both `value` and `displayValue`.
+- `maxLength` enforced as a character limit on the input string.
+- `onChange`: called with the numeric string as both `value` and `displayValue`.
 
 ---
 
-### 8.5 CheckboxField
+### 8.5 Boolean type
 
 - `onChange`: called with `'true'` or `'false'` as both `value` and `displayValue`.
-- Read-only: disabled non-interactive checkbox.
+- Read-only: renders as a disabled, non-interactive checkbox.
 
 ---
 
-## 9. Form State & Behavior
+### 8.6 String / text types
 
-The `Form` organism must use `useReducer` for all state management. All state transitions are expressed as dispatched actions.
+- `string` with `maxLength ≤ 255` or no `maxLength`: renders `<input type="text">`.
+- `string` with `maxLength > 255`, `text`, `html`, `translated_text`: renders `<textarea>`.
+- Read-only: renders as plain text. Empty value renders as empty — no placeholder, no dash.
+- `onChange`: called with the same string as both `value` and `displayValue`.
 
-### 9.1 Reducer Actions
+---
+
+## 9. Form State & Behaviour
+
+The `Form` organism uses `useReducer` for all state management. All state transitions are expressed as dispatched actions — no direct `setState` calls anywhere in the Form.
+
+### 9.1 State Shape
+
+```typescript
+interface FormState {
+  status: 'loading' | 'ready' | 'saving' | 'error'
+  metadata: Record<string, FieldData>       // keyed by field name
+  formRecord: Record<string, {              // keyed by 'table.field'
+    value: string
+    displayValue: string
+  }>
+  validationErrors: string[]                // list of 'table.field' keys with errors
+  saveError: string | null
+  loadError: string | null
+}
+```
+
+### 9.2 Reducer Actions
 
 ```typescript
 type FormAction =
@@ -369,92 +394,89 @@ type FormAction =
   | { type: 'DISMISS_ERROR' }
 ```
 
-### 9.2 Field Change Handling
+`LOAD_SUCCESS` carries both `metadata` (from `RhinoService`) and `record` (from `RecordService`). The reducer merges these into the initial `formRecord` in a single atomic transition.
+
+### 9.3 Field Change Handling
 
 On every field change (`FIELD_CHANGED`):
-- Update `formRecord` in state.
-- Re-filter dependent `ChoiceField` options.
-- Auto-clear invalid dependent choice values.
-- Call `onFieldChange` prop AFTER state is updated.
+1. Update `formRecord` in state with the new value and displayValue.
+2. Check all other fields for dependent choice lists whose `dependentOnField` matches the changed field.
+3. For any dependent choice field whose currently selected value is no longer valid given the new parent value, clear its value to `''`.
+4. Call `onFieldChange` prop AFTER state is updated.
 
-### 9.3 Validation
+### 9.4 Validation
 
 On save attempt only — never on field change:
-- Fields where effective `mandatory = true` AND `readOnly = false` AND `visible = true` must have non-empty value.
-- On failure: dispatch `VALIDATION_FAILED`, show summary above action buttons, apply `hasError` to failing fields.
-- Errors clear only on successful save or explicit dismiss.
+- A field fails validation if: effective `mandatory = true` AND effective `readOnly = false` AND `visible = true` AND `value` is empty string.
+- On failure: dispatch `VALIDATION_FAILED` with the list of failing field keys, show a summary message above the action buttons, pass `hasError={true}` to each failing `Field`.
+- Validation errors clear only on successful save or when the user explicitly dismisses.
 
-### 9.4 Saving
+### 9.5 Saving
 
-- Group fields by `table + sysId`.
-- Only include fields explicitly declared in `FieldDefinition` — never the full record.
-- Invisible fields excluded from save payload.
+- Group declared fields by `table + sysId`.
+- Build payload for each group containing only declared field names and their current stored values from `formRecord`. Never include the full record; never include display values; never include invisible fields.
 - Empty `sysId` → `RecordService.createRecord()`.
 - Non-empty `sysId` → `RecordService.updateRecord()`.
-- All saves dispatched in parallel.
-- `onSave` called with `SaveResult[]` on full success.
-- Partial failures: communicate which records succeeded and failed, call `onError`.
+- All save calls dispatched in parallel with `Promise.all`.
+- On full success: dispatch `SAVE_SUCCESS`, call `onSave` with `SaveResult[]`.
+- On partial failure: identify which records succeeded and which failed, show specific error messaging, call `onError`.
 
-### 9.5 Read-Only Mode
+### 9.6 Read-Only Mode
 
-`readOnly={true}` at form level forces all fields read-only and hides Save button.
+`readOnly={true}` at form level forces all fields into read-only mode and hides the Save button regardless of `showSaveButton`.
 
-### 9.6 Empty / Null Display
+### 9.7 Empty / Null Display
 
-Fields with no value in read-only mode render as empty — no placeholder, no dash.
+Fields with no value in read-only mode render as empty — no placeholder text, no dash.
 
-### 9.7 Field Render Key Strategy
+### 9.8 Field Render Key
 
-Each field rendered with React key: `table + '.' + sysId + '.' + field`
+Each `Field` rendered with React key: `table + '.' + sysId + '.' + field`
 
-### 9.8 Max Length Enforcement
+### 9.9 Max Length Enforcement
 
-Every text input field enforces `maxLength` from metadata. Does not apply to `ReferenceField` or `ChoiceField`.
-
-### 9.9 Mandatory Indicator
-
-Red asterisk (\*) after label text when field is effectively mandatory.
+`maxLength` from metadata is passed to `Field` and enforced on text and number inputs. Not applicable to reference or choice fields.
 
 ### 9.10 Loading & Error States
 
-- Single `Spinner` while loading — no partial field rendering.
-- Full-form error state on load failure.
-- Save error shown above action buttons.
+- Single `Spinner` rendered for the entire form while loading — no partial field rendering.
+- Full-form error state on load failure — fields not rendered, `onError` called.
+- Save error displayed above action buttons.
 
 ---
 
 ## 10. Layout
 
-- CSS grid, columns derived from `columns.length`.
+- CSS grid layout. Column count derived from `columns.length`.
 - Fields fill top-to-bottom within each column, left-to-right across columns.
-- Save/Cancel buttons below the grid.
+- Save/Cancel buttons rendered below the grid.
 - `readOnly={true}` at form level: all fields read-only, Save button hidden.
 
 ---
 
 ## 11. Invisible Fields
 
-- Not rendered.
-- Still tracked in state and `formRecord`.
-- Excluded from validation and save payload.
+- Not rendered in the DOM.
+- Still tracked in `formRecord` state.
+- Excluded from validation.
+- Excluded from save payload.
 
 ---
 
 ## 12. Error States
 
-| Situation | Behavior |
+| Situation | Behaviour |
 |-----------|----------|
 | Load failure | Full-form error shown, fields not rendered, `onError` called |
-| Save failure (all) | Error shown above action buttons, `onError` called |
+| Save failure (all records) | Error shown above action buttons, `onError` called |
 | Save failure (partial) | Error identifies which records failed and which succeeded |
-| Validation failure | Red border on failing fields + summary at form level |
-| Field metadata not found | Renders as `StringField` with raw field name as label |
+| Validation failure | `hasError` applied to failing fields + summary at form level |
+| Field metadata not found | Renders as plain text input with raw field name as label |
 
 ---
 
 ## 13. Out of Scope
 
-- Dynamic and advanced reference qualifier evaluation (infrastructure in place, evaluation not yet implemented)
 - UI policies
 - Automatic resolution of reference `dependent_on_field`
 - Custom date picker UI

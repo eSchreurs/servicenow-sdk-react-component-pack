@@ -36,10 +36,10 @@ The project must be built in the following sequence. The agent must never skip a
 | 1 | **Project Scaffolding** | Folder structure, config files, and placeholders set up from the provided SDK repo |
 | 2 | **Theme & Context** | Centralized theme file, `ThemeContext`, `ServiceNowContext`, and all shared types |
 | 3 | **Service Layer** | All five services + companion app metadata endpoint |
-| 4 | **Foundation Atoms** | `FieldWrapper`, `Text`, `Label`, `Icon`, `Spinner` |
-| 5 | **Input Atoms** | `TextInput`, `TextArea`, `Checkbox`, `SelectInput`, `ReferenceInput` |
-| 6 | **Feedback & Action Atoms** | `Button`, `Badge`, `Tooltip`, `Popover` |
-| 7 | **Molecules** | All field molecules + `SearchBar` |
+| 4 | **Primitive Components** | `FieldWrapper`, `Text`, `Label`, `Icon`, `Spinner` |
+| 5 | **Input Primitives** | `Input`, `Checkbox`, `Dropdown` |
+| 6 | **Feedback & Action Components** | `Button`, `Badge`, `Tooltip`, `Popover` |
+| 7 | **Field Component** | Unified `Field` component + all internal parts + `SearchBar` |
 | 8 | **Form Organism** | Full `Form` component |
 | 9 | **Component Explorer** | Living documentation UI Page |
 
@@ -53,7 +53,6 @@ The project must be built in the following sequence. The agent must never skip a
 - ServiceNow Table API integration for data retrieval and updates
 - Scripted REST API for server-side metadata resolution (field definitions, choices, table hierarchy) and any other logic requiring Glide API access
 - Centralized theme file with configurable styling variables
-- Atomic design system: atoms → molecules → organisms
 - Style override support via props on every component
 - Display value / actual value handling: UI always shows display values, underlying database values retained internally
 
@@ -100,7 +99,7 @@ Never place client-side code in `server/` or vice versa. The SDK build system en
 
 All data retrieval and mutations go through **ServiceNow Table API** or **Scripted REST APIs**.
 
-**All server-side logic goes through the Scripted REST API** — this includes not just qualifier evaluation but also field metadata resolution (sys_dictionary, sys_dictionary_override), choice list fetching (sys_choice), and table hierarchy resolution (GlideTableHierarchy). The browser never queries these tables directly.
+**All server-side logic goes through the Scripted REST API** — this includes field metadata resolution (sys_dictionary, sys_dictionary_override), choice list fetching (sys_choice), and table hierarchy resolution (GlideTableHierarchy). The browser never queries these tables directly.
 
 The single metadata endpoint (`POST /api/x_326171_ssdk_pack/rhino/metadata`) handles all of this in one round-trip per table, returning `FieldData` objects ready for use by the Form organism.
 
@@ -112,9 +111,17 @@ Data returned from any API surfaces the **display value** to the user while reta
 |---------|---------------|---------|
 | `CacheService` | Shared in-memory key-value store | — |
 | `ServiceNowClient` | Base HTTP layer, sole caller of `fetch()` | No |
-| `RhinoService` | Field metadata via companion app endpoint | Yes — per table+field-set |
+| `RhinoService` | Field metadata via companion app endpoint | Yes — per table+field-set+language |
 | `RecordService` | Record CRUD via Table API | No |
 | `SearchService` | Reference field typeahead search | No |
+
+### Field Component Architecture
+
+The library uses a single unified `Field` component rather than separate per-type field components. `Field` resolves the correct input at render time from the `type` and `isChoiceField` props, which come from live `FieldData` metadata.
+
+This is intentional. ServiceNow field types are metadata-driven — a field's type can change in the backend without any frontend code changes. Because resolution happens at render time, the UI adapts automatically.
+
+The resolution logic lives in `_internal/resolveFieldKind.ts`. Internal building blocks (`FieldWrapper`, `ReferenceInput`, `dateHelpers`) live in `components/atoms/_internal/` and are not exported from the public `index.ts`.
 
 ### Theming
 
@@ -122,8 +129,8 @@ A single **theme file** (`src/client/npm-package/theme/theme.ts`) defines all gl
 
 ### State Management
 
-- **Simple components** (atoms, simple molecules) use `useState`.
-- **Complex components** (organisms, molecules with genuinely complex interdependent state) use `useReducer`. All state transitions expressed as dispatched actions handled atomically in the reducer.
+- **Simple components** use `useState`.
+- **Complex components** (those with genuinely complex interdependent state — currently only `Form`) use `useReducer`. All state transitions expressed as dispatched actions handled atomically in the reducer.
 - No third-party state management libraries.
 
 ### Security
@@ -153,7 +160,6 @@ A single **theme file** (`src/client/npm-package/theme/theme.ts`) defines all gl
 ### Hard Rules
 - Never place Glide API logic in the browser — always proxy through a Scripted REST API.
 - Never hardcode credentials, tokens, or secrets anywhere.
-- Never break atomic design: if a component needs a sub-element that could be its own component, make it one.
 - Never silently swallow errors — always handle and surface them appropriately.
 - **Only the following NPM packages may be used:** those provided by ServiceNow (`@servicenow/*`) and React (`react`, `react-dom`). No other third-party NPM packages under any circumstance. Build from scratch using only these packages and native browser/TypeScript APIs.
 
@@ -164,20 +170,39 @@ A single **theme file** (`src/client/npm-package/theme/theme.ts`) defines all gl
 ```
 / (repository root = ServiceNow app)
 ├── now.config.json                     # SDK app config (scope, scopeId, name)
-├── now.prebuild.mjs                     # Prebuild hook
-├── package.json                         # SDK dependencies
-├── .eslintrc                            # ESLint config
+├── now.prebuild.mjs                    # Prebuild hook
+├── package.json                        # SDK dependencies
+├── .eslintrc                           # ESLint config
 ├── docs/
-│   ├── specs/                           # Spec documents
-│   └── phases/                          # Phase documents
+│   ├── specs/                          # Spec documents
+│   └── phases/                         # Phase documents
 └── src/
     ├── client/
-    │   ├── component-explorer/          # UI Page — living documentation (Phase 9)
-    │   └── npm-package/                 # React component library
+    │   ├── component-explorer/         # UI Page — living documentation (Phase 9)
+    │   └── npm-package/                # React component library
     │       ├── components/
     │       │   ├── atoms/
+    │       │   │   ├── _internal/      # Internal building blocks — not exported publicly
+    │       │   │   │   ├── FieldWrapper.tsx
+    │       │   │   │   ├── ReferenceInput.tsx
+    │       │   │   │   ├── dateHelpers.ts
+    │       │   │   │   └── resolveFieldKind.ts
+    │       │   │   ├── Badge.tsx
+    │       │   │   ├── Button.tsx
+    │       │   │   ├── Checkbox.tsx
+    │       │   │   ├── Dropdown.tsx
+    │       │   │   ├── Field.tsx       # Unified field component
+    │       │   │   ├── Icon.tsx
+    │       │   │   ├── Input.tsx
+    │       │   │   ├── Label.tsx
+    │       │   │   ├── Popover.tsx
+    │       │   │   ├── Spinner.tsx
+    │       │   │   ├── Text.tsx
+    │       │   │   └── Tooltip.tsx
     │       │   ├── molecules/
+    │       │   │   └── SearchBar.tsx
     │       │   └── organisms/
+    │       │       └── Form.tsx
     │       ├── services/
     │       │   ├── CacheService.ts
     │       │   ├── ServiceNowClient.ts
@@ -191,22 +216,25 @@ A single **theme file** (`src/client/npm-package/theme/theme.ts`) defines all gl
     │       │   └── theme.ts
     │       ├── types/
     │       │   └── index.ts
-    │       └── index.ts                 # Main entry point — all exports
+    │       └── index.ts                # Main entry point — all public exports
     ├── server/
     │   ├── tsconfig.json
     │   └── api/
-    │       └── getRecordMetadata.ts     # Scripted REST API handler
+    │       └── getRecordMetadata.ts    # Scripted REST API handler
     └── fluent/
         └── api/
-            └── rhino.now.ts             # Fluent REST API definition
+            └── rhino.now.ts            # Fluent REST API definition
 ```
 
 ### Key Files
 | File | Purpose |
 |------|---------|
 | `now.config.json` | SDK app config — scope, scopeId, name |
-| `src/client/npm-package/index.ts` | Main entry point for the component library |
+| `src/client/npm-package/index.ts` | Main entry point — all public exports |
 | `src/client/npm-package/theme/theme.ts` | Global styling variables |
+| `src/client/npm-package/components/atoms/Field.tsx` | Unified field component |
+| `src/client/npm-package/components/atoms/_internal/resolveFieldKind.ts` | Field type resolution logic |
+| `src/client/npm-package/components/organisms/Form.tsx` | Form organism |
 | `src/client/npm-package/services/CacheService.ts` | Shared in-memory cache |
 | `src/client/npm-package/services/ServiceNowClient.ts` | Base HTTP layer |
 | `src/client/npm-package/services/RhinoService.ts` | Field metadata fetching and caching |
@@ -218,10 +246,10 @@ A single **theme file** (`src/client/npm-package/theme/theme.ts`) defines all gl
 ## 7. Current Status
 
 ### ✅ Completed
-- Phases 1, 2, and 3 — scaffolding, theme/types, and service layer
+- Phases 1–7 — scaffolding, theme/types, service layer, primitive components, input primitives, feedback components, Field component, SearchBar
 
 ### 📋 Up Next
-- Phase 4: Foundation Atoms
+- Phase 8: Form Organism
 
 ---
 
@@ -231,21 +259,20 @@ A single **theme file** (`src/client/npm-package/theme/theme.ts`) defines all gl
 - No direct browser access to Glide APIs — all server-side ServiceNow logic must be proxied via Scripted REST APIs.
 - Components must function within the constraints of the ServiceNow SDK IDE environment.
 
-### Bugs
-- None known.
+### Known Gaps
+- `ServiceNowProvider` is not yet wrapping the Component Explorer root (`ComponentExplorer.tsx`). This must be added before or during Phase 8, as the Form reads `language` from `useServiceNow()`.
+- `resolveFieldKind` logic currently lives inline inside `Field.tsx`. It should be extracted to `_internal/resolveFieldKind.ts` for clarity.
 
 ---
 
 ## 9. Agent Instructions
 
-### Behavior
+### Behaviour
 - **Approach:** Think through the full component design (props interface, data flow, styling, API needs) before writing any code. State your plan first.
 - **Scope:** Only create or modify files relevant to the current task. Do not refactor unrelated components or files unless explicitly asked.
-- **Consistency:** Always follow atomic design. If you're building a molecule or organism, check whether the required atoms already exist before creating new primitives.
 - **Communication:** At the end of each response, summarize what was done, what decisions were made and why, and what the suggested next step is.
 
 ### Dos ✅
-- Follow atomic design strictly — build from existing primitives where possible.
 - Reference the theme file for all default styling via `useTheme()` — never hardcode style values.
 - Always define a full TypeScript props interface for every component.
 - Route any ServiceNow server-side logic through the designated Scripted REST API.

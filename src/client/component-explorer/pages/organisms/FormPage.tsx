@@ -12,7 +12,7 @@ export function FormPage(): React.ReactElement {
   return (
     <PageLayout
       title="Form"
-      description="The primary organism in this library. Renders a fully data-driven, configurable form that reads from and writes to ServiceNow records. Driven entirely by props — the developer declares columns of fields and the Form handles metadata loading, type resolution, validation, and saving."
+      description="The primary organism in this library. Renders a fully data-driven, configurable form that reads from and writes to ServiceNow records. Driven entirely by props — the developer declares sections of columns with fields, and the Form handles metadata loading, type resolution, validation, and saving."
       sections={[
         {
           title: 'Live Demo',
@@ -33,17 +33,23 @@ export function FormPage(): React.ReactElement {
                 }}
               >
                 <Form
-                  columns={[
-                    [
-                      { table: 'incident', sysId: '', field: 'short_description', defaultValue: 'Demo incident' },
-                      { table: 'incident', sysId: '', field: 'description' },
-                      { table: 'incident', sysId: '', field: 'category' },
-                    ],
-                    [
-                      { table: 'incident', sysId: '', field: 'priority' },
-                      { table: 'incident', sysId: '', field: 'assignment_group' },
-                      { table: 'incident', sysId: '', field: 'assigned_to' },
-                    ],
+                  title="New Incident"
+                  sections={[
+                    {
+                      title: 'Details',
+                      columns: [
+                        [
+                          { table: 'incident', sysId: '', field: 'short_description', defaultValue: 'Demo incident' },
+                          { table: 'incident', sysId: '', field: 'description' },
+                          { table: 'incident', sysId: '', field: 'category' },
+                        ],
+                        [
+                          { table: 'incident', sysId: '', field: 'priority' },
+                          { table: 'incident', sysId: '', field: 'assignment_group' },
+                          { table: 'incident', sysId: '', field: 'assigned_to' },
+                        ],
+                      ],
+                    },
                   ]}
                   onSave={(results) => {
                     window.console.log('Form saved:', results);
@@ -62,10 +68,15 @@ export function FormPage(): React.ReactElement {
             <PropTable
               props={[
                 {
-                  name: 'columns',
-                  type: 'FieldDefinition[][]',
+                  name: 'sections',
+                  type: 'FormSection[]',
                   required: true,
-                  description: 'Each inner array is a column. Fields render top-to-bottom within each column, left-to-right across columns. Column count determines the CSS grid column count.',
+                  description: 'One or more sections. Each section has an optional title and its own column layout. Column count per section determines the CSS grid column count for that section.',
+                },
+                {
+                  name: 'title',
+                  type: 'string',
+                  description: 'Optional form-level heading rendered above all sections with a bottom border.',
                 },
                 {
                   name: 'readOnly',
@@ -84,6 +95,11 @@ export function FormPage(): React.ReactElement {
                   type: 'boolean',
                   defaultValue: 'false',
                   description: 'Whether to render the Cancel button.',
+                },
+                {
+                  name: 'extraButtons',
+                  type: 'FormButton[]',
+                  description: 'Additional buttons rendered alongside Save and Cancel in the action bar.',
                 },
                 {
                   name: 'onSave',
@@ -120,6 +136,40 @@ export function FormPage(): React.ReactElement {
           ),
         },
         {
+          title: 'Props — FormSection',
+          children: (
+            <PropTable
+              props={[
+                {
+                  name: 'columns',
+                  type: 'FieldDefinition[][]',
+                  required: true,
+                  description: 'Each inner array is a column. Fields render top-to-bottom within each column, left-to-right across columns. Column count determines the CSS grid column count for this section.',
+                },
+                {
+                  name: 'title',
+                  type: 'string',
+                  description: 'Optional section heading rendered above this section\'s column grid with a bottom border.',
+                },
+              ]}
+            />
+          ),
+        },
+        {
+          title: 'Props — FormButton',
+          children: (
+            <PropTable
+              props={[
+                { name: 'label', type: 'string', required: true, description: 'Button text.' },
+                { name: 'onClick', type: '() => void', required: true, description: 'Click handler.' },
+                { name: 'variant', type: "'primary' | 'secondary' | 'ghost' | 'danger'", defaultValue: "'secondary'", description: 'Visual style of the button.' },
+                { name: 'disabled', type: 'boolean', defaultValue: 'false', description: 'Disables the button.' },
+                { name: 'loading', type: 'boolean', defaultValue: 'false', description: 'Shows a spinner and disables the button.' },
+              ]}
+            />
+          ),
+        },
+        {
           title: 'Props — FieldDefinition',
           children: (
             <PropTable
@@ -146,15 +196,57 @@ export function FormPage(): React.ReactElement {
               code={`import { Form } from 'servicenow-sdk-react-component-pack';
 
 <Form
-  columns={[
-    [
-      { table: 'incident', sysId: 'abc123', field: 'short_description' },
-      { table: 'incident', sysId: 'abc123', field: 'description' },
-    ],
-    [
-      { table: 'incident', sysId: 'abc123', field: 'priority' },
-      { table: 'incident', sysId: 'abc123', field: 'assigned_to' },
-    ],
+  sections={[
+    {
+      columns: [
+        [
+          { table: 'incident', sysId: 'abc123', field: 'short_description' },
+          { table: 'incident', sysId: 'abc123', field: 'description' },
+        ],
+        [
+          { table: 'incident', sysId: 'abc123', field: 'priority' },
+          { table: 'incident', sysId: 'abc123', field: 'assigned_to' },
+        ],
+      ],
+    },
+  ]}
+  onSave={(results) => console.log('Saved:', results)}
+/>`}
+            />
+          ),
+        },
+        {
+          title: 'With Title and Sections',
+          children: (
+            <CodeSnippet
+              code={`<Form
+  title="Incident Report"
+  sections={[
+    {
+      title: 'Overview',
+      columns: [
+        [
+          { table: 'incident', sysId: 'abc123', field: 'short_description' },
+          { table: 'incident', sysId: 'abc123', field: 'description' },
+        ],
+        [
+          { table: 'incident', sysId: 'abc123', field: 'category' },
+          { table: 'incident', sysId: 'abc123', field: 'priority' },
+        ],
+      ],
+    },
+    {
+      title: 'Assignment',
+      columns: [
+        [
+          { table: 'incident', sysId: 'abc123', field: 'assignment_group' },
+          { table: 'incident', sysId: 'abc123', field: 'assigned_to' },
+        ],
+        [
+          { table: 'incident', sysId: 'abc123', field: 'state' },
+        ],
+      ],
+    },
   ]}
   onSave={(results) => console.log('Saved:', results)}
 />`}
@@ -167,26 +259,62 @@ export function FormPage(): React.ReactElement {
             <CodeSnippet
               code={`// Pass sysId="" for new records. Use defaultValue to pre-populate fields.
 <Form
-  columns={[
-    [
-      {
-        table: 'incident',
-        sysId: '',
-        field: 'short_description',
-        defaultValue: 'New incident',
-      },
-      { table: 'incident', sysId: '', field: 'description' },
-      { table: 'incident', sysId: '', field: 'category' },
-    ],
-    [
-      { table: 'incident', sysId: '', field: 'priority', defaultValue: '2' },
-      { table: 'incident', sysId: '', field: 'assignment_group' },
-    ],
+  title="New Incident"
+  sections={[
+    {
+      columns: [
+        [
+          {
+            table: 'incident',
+            sysId: '',
+            field: 'short_description',
+            defaultValue: 'New incident',
+          },
+          { table: 'incident', sysId: '', field: 'description' },
+          { table: 'incident', sysId: '', field: 'category' },
+        ],
+        [
+          { table: 'incident', sysId: '', field: 'priority', defaultValue: '2' },
+          { table: 'incident', sysId: '', field: 'assignment_group' },
+        ],
+      ],
+    },
   ]}
   onSave={(results) => {
     const newSysId = results[0].sysId;
     console.log('Created incident:', newSysId);
   }}
+/>`}
+            />
+          ),
+        },
+        {
+          title: 'Extra Buttons',
+          children: (
+            <CodeSnippet
+              code={`<Form
+  sections={[
+    {
+      columns: [
+        [{ table: 'incident', sysId: 'abc123', field: 'short_description' }],
+      ],
+    },
+  ]}
+  showCancelButton
+  extraButtons={[
+    {
+      label: 'Save & Close',
+      variant: 'primary',
+      onClick: () => handleSaveAndClose(),
+    },
+    {
+      label: 'Delete',
+      variant: 'danger',
+      onClick: () => handleDelete(),
+    },
+  ]}
+  onSave={(results) => console.log('Saved:', results)}
+  onCancel={() => router.back()}
 />`}
             />
           ),
@@ -211,16 +339,20 @@ function IncidentForm() {
 
   return (
     <Form
-      columns={[
-        [
-          { table: 'incident', sysId: 'abc123', field: 'assignment_group' },
-          {
-            table: 'incident',
-            sysId: 'abc123',
-            field: 'assigned_to',
-            reference: { filter: assignedToFilter },
-          },
-        ],
+      sections={[
+        {
+          columns: [
+            [
+              { table: 'incident', sysId: 'abc123', field: 'assignment_group' },
+              {
+                table: 'incident',
+                sysId: 'abc123',
+                field: 'assigned_to',
+                reference: { filter: assignedToFilter },
+              },
+            ],
+          ],
+        },
       ]}
       onFieldChange={handleFieldChange}
       onSave={(results) => console.log(results)}
@@ -238,16 +370,28 @@ function IncidentForm() {
 // The Form batches API calls — one metadata call per unique table,
 // one record fetch per unique table+sysId combination.
 <Form
-  columns={[
-    [
-      { table: 'incident', sysId: 'abc123', field: 'short_description' },
-      { table: 'incident', sysId: 'abc123', field: 'category' },
-    ],
-    [
-      { table: 'sys_user', sysId: 'usr456', field: 'first_name' },
-      { table: 'sys_user', sysId: 'usr456', field: 'last_name' },
-      { table: 'sys_user', sysId: 'usr456', field: 'email', readOnly: true },
-    ],
+  sections={[
+    {
+      title: 'Incident',
+      columns: [
+        [
+          { table: 'incident', sysId: 'abc123', field: 'short_description' },
+          { table: 'incident', sysId: 'abc123', field: 'category' },
+        ],
+      ],
+    },
+    {
+      title: 'Caller',
+      columns: [
+        [
+          { table: 'sys_user', sysId: 'usr456', field: 'first_name' },
+          { table: 'sys_user', sysId: 'usr456', field: 'last_name' },
+        ],
+        [
+          { table: 'sys_user', sysId: 'usr456', field: 'email', readOnly: true },
+        ],
+      ],
+    },
   ]}
   onSave={(results) => console.log('Saved records:', results)}
 />`}

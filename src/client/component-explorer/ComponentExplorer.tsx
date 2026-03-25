@@ -152,7 +152,6 @@ function Sidebar({ selected, onSelect }: SidebarProps): React.ReactElement {
     flexShrink: 0,
     backgroundColor: theme.colorBackgroundMuted,
     borderRight: `${theme.borderWidth} solid ${theme.colorBorder}`,
-    overflowY: 'auto',
     padding: `${theme.spacingMd} 0`,
   };
 
@@ -254,7 +253,7 @@ function ExplorerShell(): React.ReactElement {
 
   const shellStyle: React.CSSProperties = {
     display: 'flex',
-    height: '100vh',
+    minHeight: '100vh',
     fontFamily: theme.fontFamily,
     backgroundColor: theme.colorBackground,
     color: theme.colorText,

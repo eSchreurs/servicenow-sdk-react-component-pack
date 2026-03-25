@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { FieldWrapper } from './_internal/FieldWrapper';
 import { snToInput, inputToSn, formatReadOnly, DateMode } from './_internal/dateHelpers';
+import { resolveFieldKind } from './_internal/resolveFieldKind';
 import { Input } from './Input';
 import { Checkbox } from './Checkbox';
 import { Dropdown } from './Dropdown';
@@ -48,32 +49,6 @@ export interface FieldProps {
 
   // isChoiceField flag — takes priority in type resolution
   isChoiceField?: boolean;
-}
-
-// ---------------------------------------------------------------------------
-// Type resolution
-// ---------------------------------------------------------------------------
-
-type InputKind = 'textinput' | 'number' | 'textarea' | 'checkbox' | 'choice' | 'reference' | 'datetime' | 'date' | 'time';
-
-function resolveKind(type: string, isChoiceField: boolean | undefined, maxLength: number | undefined): InputKind {
-  if (isChoiceField) return 'choice';
-  switch (type) {
-    case 'string':         return maxLength !== undefined && maxLength > 255 ? 'textarea' : 'textinput';
-    case 'text':
-    case 'html':
-    case 'translated_text': return 'textarea';
-    case 'integer':
-    case 'decimal':
-    case 'float':
-    case 'currency':       return 'number';
-    case 'boolean':        return 'checkbox';
-    case 'reference':      return 'reference';
-    case 'glide_date_time': return 'datetime';
-    case 'glide_date':     return 'date';
-    case 'glide_time':     return 'time';
-    default:               return 'textinput';
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -247,7 +222,7 @@ export function Field({
 }: FieldProps): React.ReactElement {
   const theme = useTheme();
 
-  const kind = resolveKind(type, isChoiceField, maxLength);
+  const kind = resolveFieldKind(type, isChoiceField, maxLength);
 
   // Shorthand to avoid repeating the 6 FieldWrapper props on every return.
   const wrap = (children: React.ReactNode) => (

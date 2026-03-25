@@ -123,23 +123,35 @@ export function SearchBarPage(): React.ReactElement {
           title: 'Usage',
           children: (
             <CodeSnippet
-              code={`import { SearchBar } from 'servicenow-sdk-react-component-pack';
+              code={`import { useState } from 'react';
+import { SearchBar } from 'servicenow-sdk-react-component-pack';
 
-const [query, setQuery] = useState('');
-const filteredItems = allItems.filter((item) =>
-  item.name.toLowerCase().includes(query.toLowerCase())
-);
+const GROUPS = [
+  { sysId: '1', name: 'Network Operations' },
+  { sysId: '2', name: 'Service Desk' },
+  { sysId: '3', name: 'Database Admins' },
+];
 
-<SearchBar
-  value={query}
-  onChange={setQuery}
-  placeholder="Search records..."
-  debounceMs={300}
-/>
+function GroupPicker() {
+  const [query, setQuery] = useState('');
 
-{filteredItems.map((item) => (
-  <RecordRow key={item.sysId} record={item} />
-))}`}
+  const filtered = GROUPS.filter((g) =>
+    g.name.toLowerCase().includes(query.toLowerCase())
+  );
+
+  return (
+    <div>
+      <SearchBar
+        value={query}
+        onChange={setQuery}
+        placeholder="Search groups..."
+      />
+      {filtered.map((group) => (
+        <div key={group.sysId}>{group.name}</div>
+      ))}
+    </div>
+  );
+}`}
             />
           ),
         },

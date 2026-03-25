@@ -237,61 +237,6 @@ function ReferenceField({
 }
 
 // ---------------------------------------------------------------------------
-// Private DateField sub-component
-// ---------------------------------------------------------------------------
-
-type DateFieldInternalProps = Pick<FieldProps,
-  'name' | 'label' | 'mandatory' | 'readOnly' | 'hasError' | 'value' |
-  'onChange' | 'mode' | 'style' | 'className'
-> & { dateKind: 'datetime' | 'date' | 'time' };
-
-function DateField({
-  name, label, mandatory, readOnly, hasError, value, onChange, mode, dateKind, style, className,
-}: DateFieldInternalProps): React.ReactElement {
-  const theme = useTheme();
-  const dateMode: DateMode = mode ?? dateKind;
-
-  const inputStyle: React.CSSProperties = {
-    display: 'block', width: '100%', height: theme.inputHeight,
-    padding: `0 ${theme.inputPaddingHorizontal}`,
-    fontFamily: theme.fontFamily, fontSize: theme.fontSizeBase,
-    color: theme.colorText, backgroundColor: theme.inputBackgroundColor,
-    border: `${theme.borderWidth} solid ${theme.colorBorder}`,
-    borderRadius: theme.borderRadius, boxSizing: 'border-box',
-    outline: 'none', transition: `border-color ${theme.transitionSpeed}`,
-  };
-
-  const readOnlySpanStyle: React.CSSProperties = {
-    display: 'block', fontFamily: theme.fontFamily, fontSize: theme.fontSizeBase,
-    color: theme.colorText, lineHeight: theme.lineHeightBase,
-    minHeight: theme.inputHeight, padding: `0 ${theme.inputPaddingHorizontal}`,
-    alignContent: 'center',
-  };
-
-  if (readOnly) {
-    return (
-      <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
-        <span id={name} style={readOnlySpanStyle}>{formatReadOnly(value, dateMode)}</span>
-      </FieldWrapper>
-    );
-  }
-
-  const inputType = dateMode === 'datetime' ? 'datetime-local' : dateMode;
-
-  return (
-    <FieldWrapper name={name} label={label} mandatory={mandatory} hasError={hasError} style={style} className={className}>
-      <input
-        id={name} type={inputType} value={snToInput(value, dateMode)}
-        onChange={(e) => onChange(name, inputToSn(e.target.value, dateMode), inputToSn(e.target.value, dateMode))}
-        required={mandatory} style={inputStyle}
-        onFocus={(e) => { e.currentTarget.style.borderColor = theme.colorBorderFocus; }}
-        onBlur={(e) => { e.currentTarget.style.borderColor = theme.colorBorder; }}
-      />
-    </FieldWrapper>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Field component
 // ---------------------------------------------------------------------------
 
@@ -321,11 +266,16 @@ export function Field({
     outline: 'none', transition: `border-color ${theme.transitionSpeed}`,
   };
 
+  // textareaStyle omits border — FieldWrapper outline is the sole error indicator.
   const textareaStyle: React.CSSProperties = {
-    ...inputStyle,
-    height: 'auto',
+    display: 'block', width: '100%',
     padding: theme.inputPaddingHorizontal,
-    resize: 'vertical',
+    fontFamily: theme.fontFamily, fontSize: theme.fontSizeBase,
+    color: theme.colorText, backgroundColor: theme.inputBackgroundColor,
+    border: `${theme.borderWidth} solid ${theme.colorBorder}`,
+    borderRadius: theme.borderRadius, boxSizing: 'border-box',
+    outline: 'none', transition: `border-color ${theme.transitionSpeed}`,
+    height: 'auto', resize: 'vertical',
   };
 
   const readOnlySpanStyle: React.CSSProperties = {
@@ -407,12 +357,18 @@ export function Field({
   }
 
   // --- datetime / date / time ---
-  return (
-    <DateField
-      name={name} label={label} mandatory={mandatory} readOnly={readOnly} hasError={hasError}
-      value={value} onChange={onChange} mode={mode}
-      dateKind={kind as 'datetime' | 'date' | 'time'}
-      style={style} className={className}
-    />
+  const dateMode: DateMode = mode ?? (kind as DateMode);
+  const inputType = dateMode === 'datetime' ? 'datetime-local' : dateMode;
+
+  if (readOnly) return wrap(<span id={name} style={readOnlySpanStyle}>{formatReadOnly(value, dateMode)}</span>);
+
+  return wrap(
+    <input
+      id={name} type={inputType} value={snToInput(value, dateMode)}
+      onChange={(e) => onChange(name, inputToSn(e.target.value, dateMode), inputToSn(e.target.value, dateMode))}
+      required={mandatory} style={inputStyle}
+      onFocus={(e) => { e.currentTarget.style.borderColor = theme.colorBorderFocus; }}
+      onBlur={(e) => { e.currentTarget.style.borderColor = theme.colorBorder; }}
+    />,
   );
 }

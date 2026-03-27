@@ -5,10 +5,11 @@ import { Spinner } from './Spinner';
 interface ButtonProps {
   children: React.ReactNode;
   onClick?: () => void;
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'page';
   size?: 'sm' | 'md' | 'lg';
   disabled?: boolean;
   loading?: boolean;
+  active?: boolean;  // Used with variant="page" to highlight the current page
   type?: 'button' | 'submit';
   style?: React.CSSProperties;
   className?: string;
@@ -21,6 +22,7 @@ export function Button({
   size = 'md',
   disabled = false,
   loading = false,
+  active = false,
   type = 'button',
   style,
   className,
@@ -67,6 +69,11 @@ export function Button({
       backgroundColor: isDisabled ? theme.colorBorder : theme.colorDanger,
       color: theme.colorBackground,
       border: `${theme.borderWidth} solid ${isDisabled ? theme.colorBorder : theme.colorDanger}`,
+    },
+    page: {
+      backgroundColor: active ? theme.colorPrimary : theme.colorBackground,
+      color: active ? theme.colorBackground : isDisabled ? theme.colorTextMuted : theme.colorText,
+      border: `${theme.borderWidth} solid ${active ? theme.colorPrimary : theme.colorBorder}`,
     },
   };
 

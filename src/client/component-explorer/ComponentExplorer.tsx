@@ -8,6 +8,7 @@ import { TextPage } from './pages/atoms/TextPage';
 import { LabelPage } from './pages/atoms/LabelPage';
 import { IconPage } from './pages/atoms/IconPage';
 import { SpinnerPage } from './pages/atoms/SpinnerPage';
+import { EmptyStatePage } from './pages/atoms/EmptyStatePage';
 
 // Atom pages — inputs
 import { InputPage } from './pages/atoms/InputPage';
@@ -31,9 +32,11 @@ import { ReferenceFieldPage } from './pages/molecules/ReferenceFieldPage';
 
 // Molecule pages
 import { SearchBarPage } from './pages/molecules/SearchBarPage';
+import { PaginationPage } from './pages/molecules/PaginationPage';
 
 // Organism pages
 import { FormPage } from './pages/organisms/FormPage';
+import { ListPage } from './pages/organisms/ListPage';
 
 // ---------------------------------------------------------------------------
 // Nav structure — add new pages here as phases are completed
@@ -59,6 +62,7 @@ const NAV_GROUPS: NavGroup[] = [
       { key: 'label', label: 'Label' },
       { key: 'icon', label: 'Icon' },
       { key: 'spinner', label: 'Spinner' },
+      { key: 'empty-state', label: 'EmptyState' },
     ],
   },
   {
@@ -94,12 +98,14 @@ const NAV_GROUPS: NavGroup[] = [
     title: 'Molecules',
     items: [
       { key: 'search-bar', label: 'SearchBar' },
+      { key: 'pagination', label: 'Pagination' },
     ],
   },
   {
     title: 'Organisms',
     items: [
       { key: 'form', label: 'Form' },
+      { key: 'list', label: 'List' },
     ],
   },
 ];
@@ -110,6 +116,7 @@ const PAGE_MAP: Record<PageKey, React.ReactElement> = {
   'label': <LabelPage />,
   'icon': <IconPage />,
   'spinner': <SpinnerPage />,
+  'empty-state': <EmptyStatePage />,
   // Input atoms
   'input': <InputPage />,
   'checkbox': <CheckboxPage />,
@@ -129,8 +136,10 @@ const PAGE_MAP: Record<PageKey, React.ReactElement> = {
   'reference-field': <ReferenceFieldPage />,
   // Molecule pages
   'search-bar': <SearchBarPage />,
+  'pagination': <PaginationPage />,
   // Organism pages
   'form': <FormPage />,
+  'list': <ListPage />,
 };
 
 const DEFAULT_PAGE: PageKey = 'text';

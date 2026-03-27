@@ -86,6 +86,24 @@ export interface BaseFieldProps {
 }
 
 // ---------------------------------------------------------------------------
+// List Types
+// ---------------------------------------------------------------------------
+
+export interface ListRow {
+  sysId: string;
+  table?: string;
+  fields: Record<string, RecordFieldValue>;
+}
+
+export interface ColumnDefinition {
+  field: string;
+  label?: string;
+  width?: string;
+  sortable?: boolean;
+  renderCell?: (row: ListRow, value: RecordFieldValue) => React.ReactNode;
+}
+
+// ---------------------------------------------------------------------------
 // Form Types
 // ---------------------------------------------------------------------------
 

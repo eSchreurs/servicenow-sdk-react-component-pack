@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTheme } from '../../context/ThemeContext';
 
-export type IconName = 'search' | 'clear' | 'info' | 'edit' | 'calendar' | 'check';
+export type IconName = 'search' | 'clear' | 'info' | 'edit' | 'calendar' | 'check' | 'sort' | 'sort-asc' | 'sort-desc';
 
 interface IconProps {
   name: IconName;
@@ -53,6 +53,30 @@ const ICON_PATHS: Record<IconName, React.ReactElement> = {
       strokeLinecap="round"
       strokeLinejoin="round"
       d="M4.5 12.75l6 6 9-13.5"
+    />
+  ),
+  // Bidirectional sort indicator — neither direction active
+  sort: (
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M3 7.5L7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5"
+    />
+  ),
+  // Ascending sort — upward arrow
+  'sort-asc': (
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18"
+    />
+  ),
+  // Descending sort — downward arrow
+  'sort-desc': (
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3"
     />
   ),
 };

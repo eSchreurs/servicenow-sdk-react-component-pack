@@ -100,9 +100,9 @@ const COLUMNS_WITH_BADGE: ColumnDefinition[] = [
       const variant =
         value.value === '1' ? 'danger' :
         value.value === '2' ? 'warning' :
-        value.value === '3' ? 'info' :
+        value.value === '3' ? 'default' :
         'default';
-      return <Badge label={value.displayValue} variant={variant} />;
+      return <Badge variant={variant}>{value.displayValue}</Badge>;
     },
   },
   {
@@ -111,7 +111,7 @@ const COLUMNS_WITH_BADGE: ColumnDefinition[] = [
     width: '120px',
     renderCell: (_row, value) => {
       const variant = value.value === '6' ? 'success' : value.value === '3' ? 'warning' : 'default';
-      return <Badge label={value.displayValue} variant={variant} />;
+      return <Badge variant={variant}>{value.displayValue}</Badge>;
     },
   },
 ];

@@ -99,3 +99,28 @@ export async function patch<T>(
   }
   return handleResponse<T>(response);
 }
+
+// getList is used for paginated Table API queries that return a list of records.
+// Unlike get(), it also parses the X-Total-Count response header and returns it
+// alongside the unwrapped result. Only RecordService.getRecords() uses this.
+export async function getList<T>(
+  path: string,
+  params?: Record<string, string>,
+): Promise<{ result: T; totalCount: number }> {
+  let response: Response;
+  try {
+    response = await fetch(buildUrl(path, params), {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'X-UserToken': getCsrfToken(),
+      },
+    });
+  } catch (e) {
+    throw new ServiceNowError('Network error', 0, String(e));
+  }
+  const totalCount = parseInt(response.headers.get('X-Total-Count') ?? '0', 10);
+  const result = await handleResponse<T>(response);
+  return { result, totalCount };
+}

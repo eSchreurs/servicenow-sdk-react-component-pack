@@ -22,6 +22,7 @@ export { Label } from './components/atoms/Label';
 export { Icon } from './components/atoms/Icon';
 export type { IconName } from './components/atoms/Icon';
 export { Spinner } from './components/atoms/Spinner';
+export { EmptyState } from './components/atoms/EmptyState';
 
 // Atoms — inputs
 export { Input } from './components/atoms/Input';

@@ -7,9 +7,7 @@ declare global {
                 explicit: {
                     }
                 composite: [
-                    {
-                    }
-                ]
+               ]
             }
         }
     }

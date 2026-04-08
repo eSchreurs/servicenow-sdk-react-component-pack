@@ -25,10 +25,18 @@ declare global {
                         id: '29c000f483f3f6107b1bc730ceaad373'
                         deleted: true
                     }
+                    '4cd94c4783bf3a507b1bc730ceaad3d4': {
+                        table: 'sys_scope_privilege'
+                        id: '4cd94c4783bf3a507b1bc730ceaad3d4'
+                    }
                     '52faab61833fbe107b1bc730ceaad3f2': {
                         table: 'sys_scope_privilege'
                         id: '52faab61833fbe107b1bc730ceaad3f2'
                         deleted: true
+                    }
+                    '54d94c4783bf3a507b1bc730ceaad3f6': {
+                        table: 'sys_scope_privilege'
+                        id: '54d94c4783bf3a507b1bc730ceaad3f6'
                     }
                     '65c000f483f3f6107b1bc730ceaad377': {
                         table: 'sys_scope_privilege'
@@ -45,6 +53,14 @@ declare global {
                         id: '84aaef21833fbe107b1bc730ceaad3bb'
                         deleted: true
                     }
+                    '88d90c4783bf3a507b1bc730ceaad3ae': {
+                        table: 'sys_scope_privilege'
+                        id: '88d90c4783bf3a507b1bc730ceaad3ae'
+                    }
+                    '8cd94c4783bf3a507b1bc730ceaad3d8': {
+                        table: 'sys_scope_privilege'
+                        id: '8cd94c4783bf3a507b1bc730ceaad3d8'
+                    }
                     '8ced927483b73a107b1bc730ceaad35a': {
                         table: 'sys_scope_privilege'
                         id: '8ced927483b73a107b1bc730ceaad35a'
@@ -54,6 +70,10 @@ declare global {
                         table: 'sys_scope_privilege'
                         id: '975584308337f6107b1bc730ceaad35c'
                         deleted: true
+                    }
+                    '98d94c4783bf3a507b1bc730ceaad3ed': {
+                        table: 'sys_scope_privilege'
+                        id: '98d94c4783bf3a507b1bc730ceaad3ed'
                     }
                     a1b2c3d4e5f64a5b8c9d0e1f2a3b4c5d: {
                         table: 'sys_ws_operation'
@@ -83,6 +103,14 @@ declare global {
                         table: 'sys_scope_privilege'
                         id: 'c951403883f3f6107b1bc730ceaad3a0'
                         deleted: true
+                    }
+                    ccd94c4783bf3a507b1bc730ceaad3dc: {
+                        table: 'sys_scope_privilege'
+                        id: 'ccd94c4783bf3a507b1bc730ceaad3dc'
+                    }
+                    dcd94c4783bf3a507b1bc730ceaad3f1: {
+                        table: 'sys_scope_privilege'
+                        id: 'dcd94c4783bf3a507b1bc730ceaad3f1'
                     }
                     f1a8af2d83fbbe107b1bc730ceaad32d: {
                         table: 'sys_scope_privilege'
@@ -129,6 +157,7 @@ declare global {
                     {
                         table: 'sys_ui_page'
                         id: '468a57caeea44a9e999b38572d9d8466'
+                        deleted: true
                         key: {
                             endpoint: 'x_326171_ssdk_pack_component_explorer.do'
                         }

@@ -92,6 +92,7 @@ export function Pagination({
 
   // Pages mode
   const items = buildPageItems(currentPage, totalPages);
+  console.log(items);
 
   const pageButtons: React.ReactElement[] = [];
   for (let i = 0; i < items.length; i++) {

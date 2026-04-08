@@ -27,13 +27,16 @@ function buildPageItems(
   current: number,
   total: number,
 ): Array<number | 'ellipsis'> {
-  console.log('buildPageItems args', { current, total });
-  if (total <= 0) {return []};
+  if (total <= 0) return [];
 
   // Collect the page numbers that must be shown
+  console.log('Set is', Set);
   const visible = new Set<number>();
+  console.log('after new Set', visible);
   visible.add(1);
+  console.log('after add 1', Array.from(visible));
   visible.add(total);
+  console.log('after add total', Array.from(visible), total);
   for (let p = Math.max(1, current - 2); p <= Math.min(total, current + 2); p++) {
     visible.add(p);
   }

@@ -45,7 +45,7 @@ const RULES: Array<{ re: RegExp; color: string }> = [
   { re: /^[a-zA-Z_][a-zA-Z0-9_]*(?=\s*\()/,    color: C.fn       }, // function call
   { re: /^[a-zA-Z_]\w*/,                        color: C.plain    }, // identifier (keyword check below)
   { re: /^\b\d+(?:\.\d+)?\b/,                   color: C.number   }, // number
-  { re: /^=>|\.\.\./,                           color: C.operator }, // operator
+  { re: /^(?:=>|\.\.\.)/ ,                       color: C.operator }, // operator
   { re: /^[\s\S]/,                              color: C.plain    }, // catch-all
 ];
 

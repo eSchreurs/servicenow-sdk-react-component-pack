@@ -27,32 +27,34 @@ function buildPageItems(
   current: number,
   total: number,
 ): Array<number | 'ellipsis'> {
-  if (total <= 0) return [];
+  if (!Number.isFinite(total) || total < 1) return [];
 
-  // Collect the page numbers that must be shown
-  console.log('Set is', Set);
-  const visible = new Set<number>();
-  console.log('after new Set', visible);
-  visible.add(1);
-  console.log('after add 1', Array.from(visible));
-  visible.add(total);
-  console.log('after add total', Array.from(visible), total);
+  const visible: number[] = [];
+
+  const addPage = (page: number): void => {
+    if (!visible.includes(page)) {
+      visible.push(page);
+    }
+  };
+
+  addPage(1);
+  addPage(total);
+
   for (let p = Math.max(1, current - 2); p <= Math.min(total, current + 2); p++) {
-    visible.add(p);
+    addPage(p);
   }
 
-  const sorted = Array.from(visible).sort((a, b) => a - b);
-  console.log('sorted', JSON.stringify(sorted));
+  visible.sort((a, b) => a - b);
 
-  // Insert ellipsis markers where there are gaps larger than 1
   const result: Array<number | 'ellipsis'> = [];
-  for (let i = 0; i < sorted.length; i++) {
-    result.push(sorted[i]);
-    if (i < sorted.length - 1 && sorted[i + 1] - sorted[i] > 1) {
+
+  for (let i = 0; i < visible.length; i++) {
+    result.push(visible[i]);
+
+    if (i < visible.length - 1 && visible[i + 1] - visible[i] > 1) {
       result.push('ellipsis');
     }
   }
-  console.log('result', JSON.stringify(result), result.length);
 
   return result;
 }

@@ -27,7 +27,8 @@ function buildPageItems(
   current: number,
   total: number,
 ): Array<number | 'ellipsis'> {
-  if (total <= 0) return [];
+  console.log('buildPageItems args', { current, total });
+  if (total <= 0) {return []};
 
   // Collect the page numbers that must be shown
   const visible = new Set<number>();
@@ -38,6 +39,7 @@ function buildPageItems(
   }
 
   const sorted = Array.from(visible).sort((a, b) => a - b);
+  console.log('sorted', JSON.stringify(sorted));
 
   // Insert ellipsis markers where there are gaps larger than 1
   const result: Array<number | 'ellipsis'> = [];
@@ -47,6 +49,7 @@ function buildPageItems(
       result.push('ellipsis');
     }
   }
+  console.log('result', JSON.stringify(result), result.length);
 
   return result;
 }
@@ -99,6 +102,7 @@ export function Pagination({
     totalPagesType: typeof totalPages,
     items,
   });
+  console.log('items snapshot', JSON.stringify(items), items.length);
 
   const pageButtons: React.ReactElement[] = [];
   for (let i = 0; i < items.length; i++) {

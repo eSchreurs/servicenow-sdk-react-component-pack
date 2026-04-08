@@ -68,7 +68,6 @@ export type {
   ChoiceEntry,
   ReferenceSearchResult,
   BaseFieldProps,
-  ListRow,
   ColumnDefinition,
   FieldDefinition,
   SaveResult,

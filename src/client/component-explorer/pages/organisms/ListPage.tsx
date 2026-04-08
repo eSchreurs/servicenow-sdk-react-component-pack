@@ -94,8 +94,8 @@ const COLUMNS_WITH_BADGE: ColumnDefinition[] = [
     renderCell: (_row, value) => {
       const variant =
         value.value === 'done'        ? 'success' :
-        value.value === 'in_progress' ? 'info'    : 'default';
-      return <Badge label={value.displayValue} variant={variant} />;
+        value.value === 'in_progress' ? 'primary'    : 'default';
+      return <Badge variant={variant}>{value.displayValue}</Badge>;
     },
   },
   {
@@ -106,7 +106,7 @@ const COLUMNS_WITH_BADGE: ColumnDefinition[] = [
       const variant =
         value.value === 'high'   ? 'danger'  :
         value.value === 'medium' ? 'warning' : 'default';
-      return <Badge label={value.displayValue} variant={variant} />;
+      return <Badge variant={variant}>{value.displayValue}</Badge>;
     },
   },
   { field: 'owner', label: 'Owner', width: '160px' },

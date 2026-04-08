@@ -96,19 +96,19 @@ declare global {
                     }
                     package_json: {
                         table: 'sys_module'
-                        id: '000bdd891fc64e2ea6c4666a7fd2d189'
+                        id: '546da2e4633c476696fb96874db7516c'
                     }
                     'rhino-api': {
                         table: 'sys_ws_definition'
-                        id: '5685797192474d34a4ed9d9080ca4109'
+                        id: '3bc2ad0fcbd1442888a84c81defcd692'
                     }
                     'rhino-api-metadata': {
                         table: 'sys_ws_operation'
-                        id: 'ac889f51b17e4940978fb274b134844a'
+                        id: '7cc1e2a281d9404db0d468c5392ec84c'
                     }
                     src_server_api_getRecordMetadata_ts: {
                         table: 'sys_module'
-                        id: '838f7a542a494433bbf514872f640da2'
+                        id: 'db041a70500b460fbef7d6f82952429c'
                     }
                 }
                 composite: [
@@ -121,16 +121,23 @@ declare global {
                     },
                     {
                         table: 'sys_ux_lib_asset'
-                        id: '5031fbdd35fe44779b79772418a41475'
+                        id: '36db859a0f80496eb87cd716678f26e0'
                         key: {
-                            name: 'x_326171_ssdk_pack/component-explorer/main'
+                            name: 'x_326171_ssdk_pack/component-explorer/main.js.map'
+                        }
+                    },
+                    {
+                        table: 'sys_ui_page'
+                        id: '468a57caeea44a9e999b38572d9d8466'
+                        key: {
+                            endpoint: 'x_326171_ssdk_pack_component_explorer.do'
                         }
                     },
                     {
                         table: 'sys_ux_lib_asset'
-                        id: '899e1e8d5ab44e38b4cb54b5413f9aac'
+                        id: 'bff1bcd9f4144d82b74989fdbf81af13'
                         key: {
-                            name: 'x_326171_ssdk_pack/component-explorer/main.js.map'
+                            name: 'x_326171_ssdk_pack/component-explorer/main'
                         }
                     },
                 ]

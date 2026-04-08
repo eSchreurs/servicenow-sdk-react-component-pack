@@ -36,6 +36,7 @@ export function Button({
       fontSize: theme.fontSizeSmall,
       padding: `${theme.spacingXs} ${theme.spacingSm}`,
       height: '1.75rem',
+      minWidth: '1.75rem',
     },
     md: {
       fontSize: theme.fontSizeBase,

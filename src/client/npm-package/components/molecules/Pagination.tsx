@@ -93,6 +93,34 @@ export function Pagination({
   // Pages mode
   const items = buildPageItems(currentPage, totalPages);
 
+  const pageButtons: React.ReactElement[] = [];
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (item === 'ellipsis') {
+      pageButtons.push(
+        <Button key={`ellipsis-${String(i)}`} variant="page" size="sm" disabled>
+          {'…'}
+        </Button>,
+      );
+    } else {
+      const pageNum = String(item);
+      const isActive = item === currentPage;
+      pageButtons.push(
+        <Button
+          key={`page-${pageNum}`}
+          variant="page"
+          size="sm"
+          active={isActive}
+          onClick={isActive ? undefined : () => onPageChange?.(item)}
+          aria-label={`Page ${pageNum}`}
+          aria-current={isActive ? 'page' : undefined}
+        >
+          {pageNum}
+        </Button>,
+      );
+    }
+  }
+
   return (
     <div style={containerStyle} className={className} role="navigation" aria-label="Pagination">
       <Button
@@ -102,37 +130,10 @@ export function Pagination({
         onClick={currentPage > 1 ? () => onPageChange?.(currentPage - 1) : undefined}
         aria-label="Previous page"
       >
-        ‹
+        {'‹'}
       </Button>
 
-      {items.map((item, index) => {
-        if (item === 'ellipsis') {
-          return (
-            <Button
-              key={`ellipsis-${index}`}
-              variant="page"
-              size="sm"
-              disabled
-            >
-              …
-            </Button>
-          );
-        }
-
-        return (
-          <Button
-            key={item}
-            variant="page"
-            size="sm"
-            active={item === currentPage}
-            onClick={item !== currentPage ? () => onPageChange?.(item) : undefined}
-            aria-label={`Page ${item}`}
-            aria-current={item === currentPage ? 'page' : undefined}
-          >
-            {item}
-          </Button>
-        );
-      })}
+      {pageButtons}
 
       <Button
         variant="page"
@@ -141,7 +142,7 @@ export function Pagination({
         onClick={currentPage < totalPages ? () => onPageChange?.(currentPage + 1) : undefined}
         aria-label="Next page"
       >
-        ›
+        {'›'}
       </Button>
     </div>
   );

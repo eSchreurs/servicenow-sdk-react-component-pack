@@ -267,39 +267,61 @@ export function List({
 
   // ---------------------------------------------------------------------------
   // Render — normal state
+  // Pagination is placed OUTSIDE the overflow:hidden container so it cannot
+  // be clipped by the border-radius overflow masking on the table portion.
   // ---------------------------------------------------------------------------
 
-  return (
-    <div style={containerStyle} className={className}>
-      <ListToolbar
-        showSearch={showSearch}
-        searchValue={searchValue}
-        onSearchChange={handleSearchChange}
-      />
+  const tableContainerStyle: React.CSSProperties = {
+    border: `${theme.borderWidth} solid ${theme.colorBorder}`,
+    // Only round the top corners when pagination is present; a bottom-rounded
+    // pagination section will visually complete the box.
+    borderRadius: pagination
+      ? `${theme.borderRadius} ${theme.borderRadius} 0 0`
+      : theme.borderRadius,
+    overflow: 'hidden',
+    backgroundColor: theme.colorBackground,
+  };
 
-      <div role="table" aria-rowcount={rows.length}>
-        <ListHeader
-          columns={columns}
-          selectable={selectable}
-          allSelected={allSelected}
-          someSelected={someSelected}
-          onSelectAll={handleSelectAll}
-          sortField={sortField}
-          sortDirection={sortDirection}
-          onSortChange={handleSortChange}
+  const paginationContainerStyle: React.CSSProperties = {
+    border: `${theme.borderWidth} solid ${theme.colorBorder}`,
+    borderTop: 'none',
+    borderRadius: `0 0 ${theme.borderRadius} ${theme.borderRadius}`,
+    backgroundColor: theme.colorBackground,
+  };
+
+  return (
+    <div style={{ fontFamily: theme.fontFamily, ...style }} className={className}>
+      <div style={tableContainerStyle}>
+        <ListToolbar
+          showSearch={showSearch}
+          searchValue={searchValue}
+          onSearchChange={handleSearchChange}
         />
 
-        {rows.map((row) => (
-          <ListRow
-            key={row.sysId}
-            row={row}
+        <div role="table" aria-rowcount={rows.length}>
+          <ListHeader
             columns={columns}
             selectable={selectable}
-            selected={selection.selectedSysIds.has(row.sysId)}
-            onSelect={(sysId) => handleSelectRow(sysId, selection.selectedSysIds.has(sysId))}
-            onEdit={onRowEdit ? () => onRowEdit(row.sysId, row.table) : undefined}
+            allSelected={allSelected}
+            someSelected={someSelected}
+            onSelectAll={handleSelectAll}
+            sortField={sortField}
+            sortDirection={sortDirection}
+            onSortChange={handleSortChange}
           />
-        ))}
+
+          {rows.map((row) => (
+            <ListRow
+              key={row.sysId}
+              row={row}
+              columns={columns}
+              selectable={selectable}
+              selected={selection.selectedSysIds.has(row.sysId)}
+              onSelect={(sysId) => handleSelectRow(sysId, selection.selectedSysIds.has(sysId))}
+              onEdit={onRowEdit ? () => onRowEdit(row.sysId, row.table) : undefined}
+            />
+          ))}
+        </div>
       </div>
 
       {pagination && (
@@ -311,6 +333,7 @@ export function List({
           hasMore={pagination.hasMore}
           isLoadingMore={pagination.isLoadingMore}
           onLoadMore={pagination.onLoadMore}
+          style={paginationContainerStyle}
         />
       )}
     </div>

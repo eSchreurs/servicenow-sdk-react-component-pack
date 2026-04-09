@@ -54,7 +54,7 @@ export interface ListProps {
 // Selection reducer
 // ---------------------------------------------------------------------------
 
-type SelectionState = { selectedSysIds: Set<string> };
+type SelectionState = { selectedSysIds: Record<string, true> };
 
 type SelectionAction =
   | { type: 'SELECT_ROW'; sysId: string }
@@ -62,26 +62,20 @@ type SelectionAction =
   | { type: 'SELECT_ALL'; sysIds: string[] }
   | { type: 'DESELECT_ALL' };
 
-function selectionReducer(state: SelectionState, action: SelectionAction): SelectionState {
-  switch (action.type) {
-    case 'SELECT_ROW': {
-      const next = new Set(state.selectedSysIds);
-      next.add(action.sysId);
-      return { selectedSysIds: next };
+  function selectionReducer(state: SelectionState, action: SelectionAction): SelectionState {
+    switch (action.type) {
+      case 'SELECT_ROW':
+        return { selectedSysIds: { ...state.selectedSysIds, [action.sysId]: true } };
+      case 'DESELECT_ROW': {
+        const { [action.sysId]: _, ...rest } = state.selectedSysIds;
+        return { selectedSysIds: rest };
+      }
+      case 'SELECT_ALL':
+        return { selectedSysIds: Object.fromEntries(action.sysIds.map(id => [id, true])) };
+      case 'DESELECT_ALL':
+        return { selectedSysIds: {} };
     }
-    case 'DESELECT_ROW': {
-      const next = new Set(state.selectedSysIds);
-      next.delete(action.sysId);
-      return { selectedSysIds: next };
-    }
-    case 'SELECT_ALL':
-      return { selectedSysIds: new Set(action.sysIds) };
-    case 'DESELECT_ALL':
-      return { selectedSysIds: new Set() };
-    default:
-      return state;
   }
-}
 
 // ---------------------------------------------------------------------------
 // Component
@@ -108,7 +102,7 @@ export function List({
 }: ListProps): React.ReactElement {
   const theme = useTheme();
 
-  const [selection, dispatch] = useReducer(selectionReducer, { selectedSysIds: new Set<string>() });
+  const [selection, dispatch] = useReducer(selectionReducer, { selectedSysIds: {} });
 
   // ---------------------------------------------------------------------------
   // Handlers
@@ -131,14 +125,14 @@ export function List({
 
   function handleSelectRow(sysId: string, currentlySelected: boolean): void {
     dispatch(currentlySelected ? { type: 'DESELECT_ROW', sysId } : { type: 'SELECT_ROW', sysId });
-    const next = new Set(selection.selectedSysIds);
-    currentlySelected ? next.delete(sysId) : next.add(sysId);
-    onRowSelect?.(Array.from(next));
+    const next = { ...selection.selectedSysIds };
+    currentlySelected ? delete next[sysId] : next[sysId] = true;
+    onRowSelect?.(Object.keys(next));
   }
-
+  
   function handleSelectAll(): void {
     const allSysIds = rows.map((r) => r.sysId);
-    const everySelected = allSysIds.every((id) => selection.selectedSysIds.has(id));
+    const everySelected = allSysIds.every((id) => id in selection.selectedSysIds);
     if (everySelected) {
       dispatch({ type: 'DESELECT_ALL' });
       onRowSelect?.([]);
@@ -152,7 +146,7 @@ export function List({
   // Derived selection flags
   // ---------------------------------------------------------------------------
 
-  const selectedCount = rows.filter((r) => selection.selectedSysIds.has(r.sysId)).length;
+  const selectedCount = rows.filter((r) => selection.selectedSysIds[r.sysId] === true).length;
   const allSelected = rows.length > 0 && selectedCount === rows.length;
   const someSelected = selectedCount > 0 && !allSelected;
 
@@ -286,8 +280,8 @@ export function List({
               row={row}
               columns={columns}
               selectable={selectable}
-              selected={selection.selectedSysIds.has(row.sysId)}
-              onSelect={(sysId) => handleSelectRow(sysId, selection.selectedSysIds.has(sysId))}
+              selected={selection.selectedSysIds[row.sysId] === true}
+              onSelect={(sysId) => handleSelectRow(sysId, selection.selectedSysIds[row.sysId] === true)}
               onEdit={onRowEdit ? () => onRowEdit(row.sysId, row.table) : undefined}
             />
           ))}

@@ -157,7 +157,10 @@ function InteractiveDemo(): React.ReactElement {
           mode: 'pages',
           pageSize: PAGE_SIZE,
           currentPage,
-          onPageChange: setPage,
+          onPageChange: (page) => {
+            setPage(page);
+            setSelected([]);
+          }
         }}
       />
       <div style={statusStyle}>

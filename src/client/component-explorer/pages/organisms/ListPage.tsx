@@ -102,7 +102,6 @@ function InteractiveDemo(): React.ReactElement {
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selected, setSelected] = useState<string[]>([]);
 
   const filtered = ALL_ROWS.filter((row) =>
     !searchTerm ||
@@ -151,7 +150,6 @@ function InteractiveDemo(): React.ReactElement {
         selectable
         showSearch
         onRowEdit={(id) => window.console.log('Edit:', id)}
-        onRowSelect={setSelected}
         onSortChange={handleSortChange}
         onSearchChange={handleSearchChange}
         pagination={{
@@ -161,11 +159,6 @@ function InteractiveDemo(): React.ReactElement {
           onPageChange: setPage,
         }}
       />
-      <div style={statusStyle}>
-        {selected.length > 0
-          ? `${selected.length} item${selected.length > 1 ? 's' : ''} selected`
-          : 'No items selected.'}
-      </div>
     </div>
   );
 }

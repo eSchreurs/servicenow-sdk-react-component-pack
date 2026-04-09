@@ -223,6 +223,8 @@ export function List({
           <ListToolbar
             showSearch
             onSearchChange={onSearchChange ?? (() => undefined)}
+            selectable={selectable}
+            selectedCount={selectedCount}
           />
         )}
         <EmptyState message={emptyMessage} />
@@ -255,12 +257,12 @@ export function List({
   return (
     <div style={{ fontFamily: theme.fontFamily, ...style }} className={className}>
       <div style={tableContainerStyle}>
-        {showSearch && (
-          <ListToolbar
-            showSearch
-            onSearchChange={onSearchChange ?? (() => undefined)}
-          />
-        )}
+        <ListToolbar
+          showSearch={showSearch}
+          onSearchChange={onSearchChange ?? (() => undefined)}
+          selectable={selectable}
+          selectedCount={selectedCount}
+        />
 
         <div role="table" aria-rowcount={rows.length}>
           <ListHeader

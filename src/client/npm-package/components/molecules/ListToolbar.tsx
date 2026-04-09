@@ -2,9 +2,11 @@ import React from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { SearchBar } from './SearchBar';
 
-export interface ListToolbarProps {
+interface ListToolbarProps {
   showSearch: boolean;
-  onSearchChange: (term: string) => void;  // Called with debounced value (300ms, owned by SearchBar)
+  onSearchChange: (term: string) => void;
+  selectedCount: number;
+  selectable: boolean;
   style?: React.CSSProperties;
   className?: string;
 }
@@ -12,6 +14,8 @@ export interface ListToolbarProps {
 export function ListToolbar({
   showSearch,
   onSearchChange,
+  selectedCount,
+  selectable,
   style,
   className,
 }: ListToolbarProps): React.ReactElement | null {
@@ -26,7 +30,10 @@ export function ListToolbar({
 
   return (
     <div style={containerStyle} className={className}>
-      <SearchBar onChange={onSearchChange} />
+      {showSearch && <SearchBar onChange={onSearchChange} />}
+      {selectable && selectedCount > 0 && (
+        <span>{selectedCount} item{selectedCount !== 1 ? 's' : ''} selected</span>
+      )}
     </div>
   );
 }

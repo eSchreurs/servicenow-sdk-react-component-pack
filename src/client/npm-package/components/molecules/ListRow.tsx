@@ -3,7 +3,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { Checkbox } from '../atoms/Checkbox';
 import { Icon } from '../atoms/Icon';
 import { Tooltip } from '../atoms/Tooltip';
-import type { ListRow as ListRowData, ColumnDefinition, RecordFieldValue } from '../../types/index';
+import type { ListRow as ListRowData, ColumnDefinition, FieldValue } from '../../types/index';
 import { buildGridTemplate } from './ListHeader';
 
 export interface ListRowProps {
@@ -84,7 +84,7 @@ export function ListRow({
       )}
 
       {columns.map((col) => {
-        const fieldValue: RecordFieldValue = row.fields[col.field] ?? { value: '', displayValue: '' };
+        const fieldValue: FieldValue = row.fields[col.field] ?? { value: '', displayValue: '' };
         const displayText = fieldValue.displayValue;
 
         const cellContent = col.renderCell

@@ -62,7 +62,7 @@ export type {
   TableApiSingleResponse,
   TableApiListResponse,
   TableApiErrorResponse,
-  RecordFieldValue,
+  FieldValue,
   ServiceNowRecord,
   FieldData,
   ChoiceEntry,

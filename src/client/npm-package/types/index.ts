@@ -32,12 +32,12 @@ export interface TableApiErrorResponse {
 // Domain Models — mapped objects consumed by services and components.
 // ---------------------------------------------------------------------------
  
-export interface RecordFieldValue {
+export interface FieldValue {
   value: string;
   displayValue: string;
 }
  
-export type ServiceNowRecord = Record<string, RecordFieldValue>;
+export type ServiceNowRecord = Record<string, FieldValue>;
  
 // Static field metadata returned by RhinoService.getRecordMetadata().
 // Never contains record values — those come from RecordService.
@@ -92,7 +92,7 @@ export interface BaseFieldProps {
 export interface ListRow {
   sysId: string;
   table?: string;
-  fields: Record<string, RecordFieldValue>;
+  fields: Record<string, FieldValue>;
 }
 
 export interface ColumnDefinition {
@@ -100,7 +100,7 @@ export interface ColumnDefinition {
   label?: string;
   width?: string;
   sortable?: boolean;
-  renderCell?: (row: ListRow, value: RecordFieldValue) => React.ReactNode;
+  renderCell?: (row: ListRow, value: FieldValue) => React.ReactNode;
 }
 
 // ---------------------------------------------------------------------------

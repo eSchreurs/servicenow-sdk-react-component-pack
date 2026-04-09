@@ -142,6 +142,7 @@ function InteractiveDemo(): React.ReactElement {
   return (
     <div>
       <List
+        key={currentPage}
         rows={pageRows}
         columns={COLUMNS}
         totalCount={totalCount}
@@ -157,10 +158,7 @@ function InteractiveDemo(): React.ReactElement {
           mode: 'pages',
           pageSize: PAGE_SIZE,
           currentPage,
-          onPageChange: (page) => {
-            setPage(page);
-            setSelected([]);
-          }
+          onPageChange: setPage,
         }}
       />
       <div style={statusStyle}>

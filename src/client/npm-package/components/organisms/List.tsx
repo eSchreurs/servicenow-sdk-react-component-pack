@@ -130,13 +130,9 @@ export function List({
   }
 
   function handleSelectRow(sysId: string, currentlySelected: boolean): void {
-    const next = new Set(selection.selectedSysIds);
-    if (currentlySelected) {
-      next.delete(sysId);
-    } else {
-      next.add(sysId);
-    }
     dispatch(currentlySelected ? { type: 'DESELECT_ROW', sysId } : { type: 'SELECT_ROW', sysId });
+    const next = new Set(selection.selectedSysIds);
+    currentlySelected ? next.delete(sysId) : next.add(sysId);
     onRowSelect?.(Array.from(next));
   }
 

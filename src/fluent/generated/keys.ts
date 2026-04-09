@@ -108,6 +108,10 @@ declare global {
                         table: 'sys_scope_privilege'
                         id: 'ccd94c4783bf3a507b1bc730ceaad3dc'
                     }
+                    'component-explorer-page': {
+                        table: 'sys_ui_page'
+                        id: '65d3664a78d14155996a9313ffdcafea'
+                    }
                     dcd94c4783bf3a507b1bc730ceaad3f1: {
                         table: 'sys_scope_privilege'
                         id: 'dcd94c4783bf3a507b1bc730ceaad3f1'
@@ -138,11 +142,20 @@ declare global {
                         table: 'sys_module'
                         id: 'db041a70500b460fbef7d6f82952429c'
                     }
+                    'x_326171_ssdk_pack/component-explorer/main': {
+                        table: 'sys_ux_lib_asset'
+                        id: '895ac28f96314251984ec8a03fcfc547'
+                    }
+                    'x_326171_ssdk_pack/component-explorer/main.js.map': {
+                        table: 'sys_ux_lib_asset'
+                        id: 'a73a1057a01d47f886f89304402b3c1a'
+                    }
                 }
                 composite: [
                     {
                         table: 'sys_ui_page'
                         id: '141b1705f7c14ad68b045b93ff0155f2'
+                        deleted: true
                         key: {
                             endpoint: 'x_326171_ssdk_pack_component_explorer.do'
                         }
@@ -150,6 +163,7 @@ declare global {
                     {
                         table: 'sys_ux_lib_asset'
                         id: '36db859a0f80496eb87cd716678f26e0'
+                        deleted: true
                         key: {
                             name: 'x_326171_ssdk_pack/component-explorer/main.js.map'
                         }
@@ -165,6 +179,7 @@ declare global {
                     {
                         table: 'sys_ux_lib_asset'
                         id: 'bff1bcd9f4144d82b74989fdbf81af13'
+                        deleted: true
                         key: {
                             name: 'x_326171_ssdk_pack/component-explorer/main'
                         }

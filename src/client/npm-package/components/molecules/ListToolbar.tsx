@@ -4,7 +4,6 @@ import { SearchBar } from './SearchBar';
 
 export interface ListToolbarProps {
   showSearch: boolean;
-  searchValue: string;
   onSearchChange: (term: string) => void;  // Called with debounced value (300ms, owned by SearchBar)
   style?: React.CSSProperties;
   className?: string;
@@ -12,7 +11,6 @@ export interface ListToolbarProps {
 
 export function ListToolbar({
   showSearch,
-  searchValue,
   onSearchChange,
   style,
   className,
@@ -28,7 +26,7 @@ export function ListToolbar({
 
   return (
     <div style={containerStyle} className={className}>
-      <SearchBar value={searchValue} onChange={onSearchChange} />
+      <SearchBar onChange={onSearchChange} />
     </div>
   );
 }

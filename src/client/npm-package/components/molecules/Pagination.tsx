@@ -100,14 +100,6 @@ export function Pagination({
 
   // Pages mode
   const items = buildPageItems(currentPage, totalPages);
-  console.log('Pagination debug', {
-    mode,
-    currentPage,
-    totalPages,
-    totalPagesType: typeof totalPages,
-    items,
-  });
-  console.log('items snapshot', JSON.stringify(items), items.length);
 
   const pageButtons: React.ReactElement[] = [];
   for (let i = 0; i < items.length; i++) {

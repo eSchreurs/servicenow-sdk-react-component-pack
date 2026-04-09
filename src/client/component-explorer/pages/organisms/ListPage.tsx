@@ -121,16 +121,16 @@ function InteractiveDemo(): React.ReactElement {
   const currentPage = Math.min(page, Math.max(1, Math.ceil(totalCount / PAGE_SIZE)));
   const pageRows = sorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-  const handleSortChange = useCallback((field: string, direction: 'asc' | 'desc' | null) => {
+  function handleSortChange(field: string, direction: 'asc' | 'desc' | null): void {
     setSortField(direction === null ? null : field);
     setSortDirection(direction);
     setPage(1);
-  }, []);
+  }
 
-  const handleSearchChange = useCallback((term: string) => {
+  function handleSearchChange(term: string): void {
     setSearchTerm(term);
     setPage(1);
-  }, []);
+  }
 
   const statusStyle: React.CSSProperties = {
     marginTop: theme.spacingSm,
@@ -145,6 +145,8 @@ function InteractiveDemo(): React.ReactElement {
         rows={pageRows}
         columns={COLUMNS}
         totalCount={totalCount}
+        sortField={sortField}
+        sortDirection={sortDirection}
         selectable
         showSearch
         onRowEdit={(id) => window.console.log('Edit:', id)}
@@ -245,6 +247,8 @@ export function ListPage(): React.ReactElement {
                 { name: 'rows', type: 'ListRow[]', required: true, description: 'Rows to render. List displays exactly these — no internal sorting, filtering, or pagination.' },
                 { name: 'columns', type: 'ColumnDefinition[]', required: true, description: 'Column configuration: labels, widths, sortability, and optional custom renderers.' },
                 { name: 'totalCount', type: 'number', description: 'Total number of items across all pages. Required for pages-mode Pagination to compute the page count correctly.' },
+                { name: 'sortField', type: 'string | null', defaultValue: 'null', description: 'Currently sorted column. Controlled by the caller — List uses this only to display the correct sort icon.' },
+                { name: 'sortDirection', type: "'asc' | 'desc' | null", defaultValue: 'null', description: 'Current sort direction. Controlled by the caller.' },
                 { name: 'selectable', type: 'boolean', defaultValue: 'false', description: 'Shows a checkbox column and enables row selection.' },
                 { name: 'onRowEdit', type: '(sysId: string, table?: string) => void', description: 'Called when the edit icon on a row is clicked. When omitted, no edit icon is rendered.' },
                 { name: 'onRowSelect', type: '(selectedSysIds: string[]) => void', description: 'Called after every selection change with the full array of currently selected ids.' },

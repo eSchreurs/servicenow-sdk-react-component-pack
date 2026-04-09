@@ -1,4 +1,4 @@
-import React, { useReducer, useState, useEffect, useCallback, useRef } from 'react';
+import React, { useReducer } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { Spinner } from '../atoms/Spinner';
 import { EmptyState } from '../atoms/EmptyState';
@@ -19,6 +19,10 @@ export interface ListProps {
 
   // Pagination support
   totalCount?: number;
+
+  // Sort state — controlled by the caller, who re-supplies sorted rows in response
+  sortField?: string | null;
+  sortDirection?: 'asc' | 'desc' | null;
 
   // Behaviour
   selectable?: boolean;
@@ -87,6 +91,8 @@ export function List({
   rows,
   columns,
   totalCount,
+  sortField = null,
+  sortDirection = null,
   selectable = false,
   onRowEdit,
   onRowSelect,
@@ -102,86 +108,57 @@ export function List({
 }: ListProps): React.ReactElement {
   const theme = useTheme();
 
-  // Selection state — useReducer per spec (complex multi-action state)
   const [selection, dispatch] = useReducer(selectionReducer, { selectedSysIds: new Set<string>() });
-
-  // Sort state — tracked internally as a single object; callbacks notify the parent
-  const [sort, setSort] = useState<{ field: string | null; direction: 'asc' | 'desc' | null }>({
-    field: null,
-    direction: null,
-  });
-
-  // Search value — internal display state; debounced callback notifies parent via ListToolbar
-  const [searchValue, setSearchValue] = useState('');
-
-  // Keep a stable ref to onRowSelect to avoid stale closures in the effect below
-  const onRowSelectRef = useRef(onRowSelect);
-  useEffect(() => { onRowSelectRef.current = onRowSelect; });
-
-  // Notify parent whenever selection changes
-  const isFirstSelectionRender = useRef(true);
-  useEffect(() => {
-    if (isFirstSelectionRender.current) {
-      isFirstSelectionRender.current = false;
-      return;
-    }
-    onRowSelectRef.current?.(Array.from(selection.selectedSysIds));
-  }, [selection.selectedSysIds]);
 
   // ---------------------------------------------------------------------------
   // Handlers
   // ---------------------------------------------------------------------------
 
-  const handleSortChange = useCallback((field: string) => {
+  function handleSortChange(field: string): void {
+    if (!onSortChange) return;
     let nextDirection: 'asc' | 'desc' | null;
-    if (sort.field !== field) {
+    if (sortField !== field) {
       nextDirection = 'asc';
-    } else if (sort.direction === 'asc') {
+    } else if (sortDirection === 'asc') {
       nextDirection = 'desc';
-    } else if (sort.direction === 'desc') {
+    } else if (sortDirection === 'desc') {
       nextDirection = null;
     } else {
       nextDirection = 'asc';
     }
-    const nextField = nextDirection === null ? null : field;
-    setSort({ field: nextField, direction: nextDirection });
-    onSortChange?.(field, nextDirection);
-  }, [sort, onSortChange]);
+    onSortChange(field, nextDirection);
+  }
 
-  // Keep a stable ref to selection so handleSelectAll doesn't need it as a dep
-  const selectionRef = useRef(selection.selectedSysIds);
-  useEffect(() => { selectionRef.current = selection.selectedSysIds; });
+  function handleSelectRow(sysId: string, currentlySelected: boolean): void {
+    const next = new Set(selection.selectedSysIds);
+    if (currentlySelected) {
+      next.delete(sysId);
+    } else {
+      next.add(sysId);
+    }
+    dispatch(currentlySelected ? { type: 'DESELECT_ROW', sysId } : { type: 'SELECT_ROW', sysId });
+    onRowSelect?.(Array.from(next));
+  }
 
-  const handleSelectRow = useCallback((sysId: string, currentlySelected: boolean) => {
-    dispatch(currentlySelected
-      ? { type: 'DESELECT_ROW', sysId }
-      : { type: 'SELECT_ROW', sysId }
-    );
-  }, []);
-
-  const handleSelectAll = useCallback(() => {
+  function handleSelectAll(): void {
     const allSysIds = rows.map((r) => r.sysId);
-    const everySelected = allSysIds.every((id) => selectionRef.current.has(id));
-    dispatch(everySelected
-      ? { type: 'DESELECT_ALL' }
-      : { type: 'SELECT_ALL', sysIds: allSysIds }
-    );
-  }, [rows]);
-
-  const handleSearchChange = useCallback((term: string) => {
-    setSearchValue(term);
-    onSearchChange?.(term);
-  }, [onSearchChange]);
+    const everySelected = allSysIds.every((id) => selection.selectedSysIds.has(id));
+    if (everySelected) {
+      dispatch({ type: 'DESELECT_ALL' });
+      onRowSelect?.([]);
+    } else {
+      dispatch({ type: 'SELECT_ALL', sysIds: allSysIds });
+      onRowSelect?.(allSysIds);
+    }
+  }
 
   // ---------------------------------------------------------------------------
-  // Derived selection + sort flags
+  // Derived selection flags
   // ---------------------------------------------------------------------------
 
   const selectedCount = rows.filter((r) => selection.selectedSysIds.has(r.sysId)).length;
   const allSelected = rows.length > 0 && selectedCount === rows.length;
   const someSelected = selectedCount > 0 && !allSelected;
-
-  const { field: sortField, direction: sortDirection } = sort;
 
   // ---------------------------------------------------------------------------
   // Pagination derived values
@@ -194,15 +171,6 @@ export function List({
   // ---------------------------------------------------------------------------
   // Styles
   // ---------------------------------------------------------------------------
-
-  const containerStyle: React.CSSProperties = {
-    fontFamily: theme.fontFamily,
-    border: `${theme.borderWidth} solid ${theme.colorBorder}`,
-    borderRadius: theme.borderRadius,
-    overflow: 'hidden',
-    backgroundColor: theme.colorBackground,
-    ...style,
-  };
 
   const fullStateStyle: React.CSSProperties = {
     display: 'flex',
@@ -218,13 +186,21 @@ export function List({
     backgroundColor: theme.colorDangerBackground,
   };
 
+  const containerStyle: React.CSSProperties = {
+    fontFamily: theme.fontFamily,
+    border: `${theme.borderWidth} solid ${theme.colorBorder}`,
+    borderRadius: theme.borderRadius,
+    overflow: 'hidden',
+    backgroundColor: theme.colorBackground,
+  };
+
   // ---------------------------------------------------------------------------
   // Render — loading state
   // ---------------------------------------------------------------------------
 
   if (loading) {
     return (
-      <div style={containerStyle} className={className}>
+      <div style={{ ...containerStyle, ...style }} className={className}>
         <div style={fullStateStyle}>
           <Spinner size="lg" />
         </div>
@@ -238,7 +214,7 @@ export function List({
 
   if (error) {
     return (
-      <div style={containerStyle} className={className}>
+      <div style={{ ...containerStyle, ...style }} className={className}>
         <div style={errorStyle} role="alert">
           {error.message || 'An error occurred while loading data.'}
         </div>
@@ -252,12 +228,11 @@ export function List({
 
   if (rows.length === 0) {
     return (
-      <div style={containerStyle} className={className}>
+      <div style={{ ...containerStyle, ...style }} className={className}>
         {showSearch && (
           <ListToolbar
-            showSearch={showSearch}
-            searchValue={searchValue}
-            onSearchChange={handleSearchChange}
+            showSearch
+            onSearchChange={onSearchChange ?? (() => undefined)}
           />
         )}
         <EmptyState message={emptyMessage} />
@@ -273,8 +248,6 @@ export function List({
 
   const tableContainerStyle: React.CSSProperties = {
     border: `${theme.borderWidth} solid ${theme.colorBorder}`,
-    // Only round the top corners when pagination is present; a bottom-rounded
-    // pagination section will visually complete the box.
     borderRadius: pagination
       ? `${theme.borderRadius} ${theme.borderRadius} 0 0`
       : theme.borderRadius,
@@ -292,11 +265,12 @@ export function List({
   return (
     <div style={{ fontFamily: theme.fontFamily, ...style }} className={className}>
       <div style={tableContainerStyle}>
-        <ListToolbar
-          showSearch={showSearch}
-          searchValue={searchValue}
-          onSearchChange={handleSearchChange}
-        />
+        {showSearch && (
+          <ListToolbar
+            showSearch
+            onSearchChange={onSearchChange ?? (() => undefined)}
+          />
+        )}
 
         <div role="table" aria-rowcount={rows.length}>
           <ListHeader

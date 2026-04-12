@@ -16,44 +16,43 @@ export * as RecordService from './services/RecordService';
 export * as SearchService from './services/SearchService';
 export * as RhinoService from './services/RhinoService';
 
-// Atoms — foundation
-export { Text } from './components/atoms/Text';
-export { Label } from './components/atoms/Label';
-export { Icon } from './components/atoms/Icon';
-export type { IconName } from './components/atoms/Icon';
-export { Spinner } from './components/atoms/Spinner';
-export { EmptyState } from './components/atoms/EmptyState';
+// Primitives
+export { Text } from './components/primitives/Text';
+export { Label } from './components/primitives/Label';
+export { Icon } from './components/primitives/Icon';
+export type { IconName } from './components/primitives/Icon';
+export { Spinner } from './components/primitives/Spinner';
+export { EmptyState } from './components/primitives/EmptyState';
 
-// Atoms — inputs
-export { Input } from './components/atoms/Input';
-export { Checkbox } from './components/atoms/Checkbox';
-export { Dropdown } from './components/atoms/Dropdown';
-export { Field } from './components/atoms/Field';
-export type { FieldProps } from './components/atoms/Field';
+// Actions
+export { Input } from './components/actions/Input';
+export { Checkbox } from './components/actions/Checkbox';
+export { Dropdown } from './components/actions/Dropdown';
+export { Button } from './components/actions/Button';
+export { Badge } from './components/actions/Badge';
+export { Tooltip } from './components/actions/Tooltip';
+export { Popover } from './components/actions/Popover';
 
-// Atoms — feedback & action
-export { Button } from './components/atoms/Button';
-export { Badge } from './components/atoms/Badge';
-export { Tooltip } from './components/atoms/Tooltip';
-export { Popover } from './components/atoms/Popover';
+// Forms
+export { Form } from './components/forms/Form';
+export type { FormProps } from './components/forms/Form';
+export { Field } from './components/forms/fields/Field';
+export type { FieldProps } from './components/forms/fields/Field';
 
-// Molecules
-export { SearchBar } from './components/molecules/SearchBar';
-export type { SearchBarProps } from './components/molecules/SearchBar';
-export { ListToolbar } from './components/molecules/ListToolbar';
-export type { ListToolbarProps } from './components/molecules/ListToolbar';
-export { ListHeader, buildGridTemplate } from './components/molecules/ListHeader';
-export type { ListHeaderProps } from './components/molecules/ListHeader';
-export { ListRow } from './components/molecules/ListRow';
-export type { ListRowProps } from './components/molecules/ListRow';
-export { Pagination } from './components/molecules/Pagination';
-export type { PaginationProps } from './components/molecules/Pagination';
+// Lists
+export { List } from './components/lists/List';
+export type { ListProps } from './components/lists/List';
+export { SearchBar } from './components/lists/SearchBar';
+export type { SearchBarProps } from './components/lists/SearchBar';
+export { ListToolbar } from './components/lists/ListToolbar';
+export type { ListToolbarProps } from './components/lists/ListToolbar';
+export { ListHeader, buildGridTemplate } from './components/lists/ListHeader';
+export type { ListHeaderProps } from './components/lists/ListHeader';
+export { ListRow } from './components/lists/ListRow';
+export type { ListRowProps } from './components/lists/ListRow';
+export { Pagination } from './components/lists/Pagination';
+export type { PaginationProps } from './components/lists/Pagination';
 
-// Organisms
-export { Form } from './components/organisms/Form';
-export type { FormProps } from './components/organisms/Form';
-export { List } from './components/organisms/List';
-export type { ListProps } from './components/organisms/List';
 
 // Types
 export type {

@@ -1,42 +1,42 @@
 import React, { useState } from 'react';
 import { ThemeProvider, useTheme } from '../npm-package/context/ThemeContext';
 import { ServiceNowProvider } from '../npm-package/context/ServiceNowContext';
-import { Text } from '../npm-package/components/atoms/Text';
+import { Text } from '../npm-package/components/primitives/Text';
 
 // Atom pages — foundation
-import { TextPage } from './pages/atoms/TextPage';
-import { LabelPage } from './pages/atoms/LabelPage';
-import { IconPage } from './pages/atoms/IconPage';
-import { SpinnerPage } from './pages/atoms/SpinnerPage';
-import { EmptyStatePage } from './pages/atoms/EmptyStatePage';
+import { TextPage } from './pages/TextPage';
+import { LabelPage } from './pages/LabelPage';
+import { IconPage } from './pages/IconPage';
+import { SpinnerPage } from './pages/SpinnerPage';
+import { EmptyStatePage } from './pages/EmptyStatePage';
 
 // Atom pages — inputs
-import { InputPage } from './pages/atoms/InputPage';
-import { CheckboxPage } from './pages/atoms/CheckboxPage';
-import { DropdownPage } from './pages/atoms/DropdownPage';
+import { InputPage } from './pages/InputPage';
+import { CheckboxPage } from './pages/CheckboxPage';
+import { DropdownPage } from './pages/DropdownPage';
 
 // Atom pages — feedback & action
-import { ButtonPage } from './pages/atoms/ButtonPage';
-import { BadgePage } from './pages/atoms/BadgePage';
-import { TooltipPage } from './pages/atoms/TooltipPage';
-import { PopoverPage } from './pages/atoms/PopoverPage';
+import { ButtonPage } from './pages/ButtonPage';
+import { BadgePage } from './pages/BadgePage';
+import { TooltipPage } from './pages/TooltipPage';
+import { PopoverPage } from './pages/PopoverPage';
 
 // Atom pages — Field
-import { StringFieldPage } from './pages/molecules/StringFieldPage';
-import { TextAreaFieldPage } from './pages/molecules/TextAreaFieldPage';
-import { NumberFieldPage } from './pages/molecules/NumberFieldPage';
-import { CheckboxFieldPage } from './pages/molecules/CheckboxFieldPage';
-import { DateTimeFieldPage } from './pages/molecules/DateTimeFieldPage';
-import { ChoiceFieldPage } from './pages/molecules/ChoiceFieldPage';
-import { ReferenceFieldPage } from './pages/molecules/ReferenceFieldPage';
+import { StringFieldPage } from './pages/StringFieldPage';
+import { TextAreaFieldPage } from './pages/TextAreaFieldPage';
+import { NumberFieldPage } from './pages/NumberFieldPage';
+import { CheckboxFieldPage } from './pages/CheckboxFieldPage';
+import { DateTimeFieldPage } from './pages/DateTimeFieldPage';
+import { ChoiceFieldPage } from './pages/ChoiceFieldPage';
+import { ReferenceFieldPage } from './pages/ReferenceFieldPage';
 
 // Molecule pages
-import { SearchBarPage } from './pages/molecules/SearchBarPage';
-import { PaginationPage } from './pages/molecules/PaginationPage';
+import { SearchBarPage } from './pages/SearchBarPage';
+import { PaginationPage } from './pages/PaginationPage';
 
 // Organism pages
-import { FormPage } from './pages/organisms/FormPage';
-import { ListPage } from './pages/organisms/ListPage';
+import { FormPage } from './pages/FormPage';
+import { ListPage } from './pages/ListPage';
 
 // ---------------------------------------------------------------------------
 // Nav structure — add new pages here as phases are completed
@@ -56,7 +56,7 @@ interface NavGroup {
 
 const NAV_GROUPS: NavGroup[] = [
   {
-    title: 'Atoms — Foundation',
+    title: 'Primitives',
     items: [
       { key: 'text', label: 'Text' },
       { key: 'label', label: 'Label' },
@@ -66,16 +66,11 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    title: 'Atoms — Inputs',
+    title: 'Actions & Feedback',
     items: [
       { key: 'input', label: 'Input' },
       { key: 'checkbox', label: 'Checkbox' },
       { key: 'dropdown', label: 'Dropdown' },
-    ],
-  },
-  {
-    title: 'Atoms — Feedback & Action',
-    items: [
       { key: 'button', label: 'Button' },
       { key: 'badge', label: 'Badge' },
       { key: 'tooltip', label: 'Tooltip' },
@@ -83,8 +78,9 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    title: 'Atoms — Field',
+    title: 'Forms & Fields',
     items: [
+      { key: 'form', label: 'Form' },
       { key: 'string-field', label: 'String' },
       { key: 'text-area-field', label: 'TextArea' },
       { key: 'number-field', label: 'Number' },
@@ -95,17 +91,11 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    title: 'Molecules',
+    title: 'Lists',
     items: [
+      { key: 'list', label: 'List' },
       { key: 'search-bar', label: 'SearchBar' },
       { key: 'pagination', label: 'Pagination' },
-    ],
-  },
-  {
-    title: 'Organisms',
-    items: [
-      { key: 'form', label: 'Form' },
-      { key: 'list', label: 'List' },
     ],
   },
 ];

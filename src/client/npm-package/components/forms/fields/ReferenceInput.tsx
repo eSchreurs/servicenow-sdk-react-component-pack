@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useTheme } from '../../../context/ThemeContext';
-import { Icon } from '../Icon';
+import { Icon } from '../../primitives/Icon';
 
 export interface ReferenceSearchColumn {
   field: string;

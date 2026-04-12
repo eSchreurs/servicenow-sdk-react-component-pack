@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTheme } from '../../npm-package/context/ThemeContext';
-import { Text } from '../../npm-package/components/atoms/Text';
+import { Text } from '../../npm-package/components/primitives/Text';
 
 interface Section {
   title: string;
